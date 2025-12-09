@@ -1,0 +1,79 @@
+.upload-progress-container {
+  margin-top: 16px;
+  width: 100%;
+}
+
+.upload-progress-bar {
+  width: 100%;
+  height: 12px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.upload-progress-fill {
+  height: 100%;
+  background: #0c7b61;
+  width: 0%;
+  transition: width 0.2s linear;
+}
+
+.upload-progress-text {
+  margin-top: 6px;
+  text-align: center;
+  font-weight: 600;
+  color: #0c7b61;
+}
+/* Fullscreen overlay for upload progress */
+.upload-progress-overlay {
+  position: fixed;
+  inset: 0; /* top:0; right:0; bottom:0; left:0; */
+  background: rgba(15, 23, 42, 0.25); /* მუქი გამჭვირვალე */
+  backdrop-filter: blur(4px);          /* დაბლარება */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;                       /* ყველაფერზე ზემოთ */
+}
+
+/* პატარა თეთრი ყუთი ცენტრში */
+.upload-progress-box {
+  background: #ffffff;
+  padding: 24px 28px;
+  border-radius: 18px;
+  width: min(360px, 90vw);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.22);
+}
+
+/* სათაური */
+.upload-progress-title {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Progress bar */
+.upload-progress-bar {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.upload-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  transition: width 0.2s ease-out;
+}
+
+/* პროცენტების ტექსტი */
+.upload-progress-text {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+  text-align: right;
+}
