@@ -188,7 +188,7 @@ const confirmUserAction = async () => {
   const nonAdminUsers = users.filter((u) => u.role !== 'ADMIN');
 
   return (
-    <div className="page">
+    <div className="page admin-page">
       <header className="page-header">
         <h1>Admin panel</h1>
         <p>Review campaigns submitted by the community.</p>

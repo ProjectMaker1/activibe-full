@@ -7,7 +7,7 @@ dotenv.config();
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'dev-access-secret';
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'dev-refresh-secret';
 
-export function signAccessToken(payload, expiresIn = '15m') {
+export function signAccessToken(payload, expiresIn = '30d') {
   return jwt.sign(payload, ACCESS_SECRET, { expiresIn });
 }
 

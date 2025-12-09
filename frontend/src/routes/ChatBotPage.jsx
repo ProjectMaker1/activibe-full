@@ -136,15 +136,25 @@ function ChatBotPage() {
       // 👉 ავტორიზებული იუზერი → backend
       if (hasToken) {
         try {
-          const res = await apiRequest(
-            '/chat/sessions',
-            withAuth(tokens.accessToken)
-          );
-          if (cancelled) return;
 
-          const serverChats = (res.sessions || []).map(normalizeChat);
-          setChats(serverChats);
-          setActiveChatId(serverChats[0]?.id ?? null);
+   const res = await apiRequest(
+  '/chat/sessions',
+  withAuth(tokens.accessToken)
+);
+if (cancelled) return;
+
+const serverChats = (res.sessions || []).map(normalizeChat);
+setChats(serverChats);
+
+if (serverChats.length > 0) {
+  setActiveChatId(serverChats[0].id);
+  setMode('chat');      // 👉 ფეიჯი ჩატზე გადავიდეს
+} else {
+  setActiveChatId(null);
+  setMode('questionnaire');
+  setStep(1);
+}
+       
         } catch (err) {
           if (!cancelled) {
             console.error('Failed to load chats', err);
@@ -153,12 +163,20 @@ function ChatBotPage() {
         return;
       }
 
-      // 👉 guest იუზერი → localStorage
-      const stored = loadGuestChats();
-      if (!cancelled) {
-        setChats(stored);
-        setActiveChatId(stored[0]?.id ?? null);
-      }
+const stored = loadGuestChats();
+if (!cancelled) {
+  setChats(stored);
+
+  if (stored.length > 0) {
+    setActiveChatId(stored[0].id);
+    setMode('chat');      // 👉 პირდაპირ ჩატზე
+  } else {
+    setActiveChatId(null);
+    setMode('questionnaire');
+    setStep(1);
+  }
+}
+
     };
 
     loadChats();
@@ -435,13 +453,14 @@ if (loading) {
 
     return (
       <div className="page chatbot-page">
-        <section className="page-header">
-          <h1>How do you want to act today?</h1>
-          <p>
-            Talk to a virtual activist mentor and plan safe, non-violent
-            actions.
-          </p>
-        </section>
+<section className="page-header">
+  <h1 className="chatbot-page-title">How do you want to act today?</h1>
+  <p>
+    Talk to a virtual activist mentor and plan safe, non-violent
+    actions.
+  </p>
+</section>
+
 
         <div className="chatbot-chat-layout">
           {/* მარცხენა – ჩატების history */}
@@ -618,10 +637,11 @@ if (loading) {
 
     return (
       <div className="page chatbot-page">
-        <section className="page-header">
-          <h1>Topic: {topicName}</h1>
-          <p>Matched with a virtual mentor based on your choice.</p>
-        </section>
+<section className="page-header">
+  <h1 className="chatbot-page-title">Topic: {topicName}</h1>
+  <p>Matched with a virtual mentor based on your choice.</p>
+</section>
+
 
         <section className="chatbot-mentor-card">
           <header className="chatbot-mentor-header">
@@ -702,25 +722,42 @@ if (loading) {
   if (step === 1) {
     return (
       <div className="page chatbot-page">
-        <section className="page-header">
-          <p className="chatbot-step-label">
-            Q1: WHAT IS YOUR FIELD OF INTEREST?
-          </p>
-          <h1>Start your path to action</h1>
-          <p>Answer this quick question to get tailored ideas.</p>
-        </section>
+<section className="page-header">
+  <p className="chatbot-step-label">
+    Start your path to action
+  </p>
+  <h1 className="chatbot-page-title">Q1: WHAT IS YOUR FIELD OF INTEREST?</h1>
+  <p>Answer this quick question to get tailored ideas.</p>
+</section>
+
 
         <section className="chatbot-question-card">
           <div className="chatbot-card-header">
             <h2>What do you care about most right now?</h2>
+<div className="direct-ai-container">
+  <span className="direct-ai-text">Direct to</span>
 
-            <button
-              type="button"
-              className="chatbot-direct-btn"
-              onClick={handleDirectToAI}
-            >
-              Direct to AI assistance
-            </button>
+  <button
+    className="loader-wrapper ai-bubble-small"
+    onClick={handleDirectToAI}
+  >
+    <span className="loader-letter">A</span>
+    <span className="loader-letter">I</span>
+    <span className="loader-letter"> </span>
+    <span className="loader-letter">A</span>
+    <span className="loader-letter">s</span>
+    <span className="loader-letter">s</span>
+    <span className="loader-letter">i</span>
+    <span className="loader-letter">s</span>
+    <span className="loader-letter">t</span>
+    <span className="loader-letter">a</span>
+    <span className="loader-letter">n</span>
+    <span className="loader-letter">t</span>
+    <div className="loader"></div>
+  </button>
+</div>
+
+
           </div>
 
           <p className="chatbot-subtitle">
@@ -820,14 +857,15 @@ if (loading) {
   // STEP 2 – Tools & sub-tools
   return (
     <div className="page chatbot-page">
-      <section className="page-header">
-        <p className="chatbot-step-label">Q2: TOOLS & METHODS</p>
-        <h1>Build your action toolkit</h1>
-        <p>
-          Based on your interests, tell us what kinds of tools you&apos;re
-          thinking of using.
-        </p>
-      </section>
+<section className="page-header">
+  <p className="chatbot-step-label">Build your action toolkit</p>
+  <h1 className="chatbot-page-title">Q2: TOOLS & METHODS</h1>
+  <p>
+    Based on your interests, tell us what kinds of tools you&apos;re
+    thinking of using.
+  </p>
+</section>
+
 
       <section className="chatbot-question-card">
         <div className="chatbot-card-header">
@@ -851,13 +889,29 @@ if (loading) {
               )}
           </div>
 
-          <button
-            type="button"
-            className="chatbot-direct-btn"
-            onClick={handleDirectToAI}
-          >
-            Direct to AI assistance
-          </button>
+<div className="direct-ai-container">
+  <span className="direct-ai-text">Direct to</span>
+
+  <button
+    className="loader-wrapper ai-bubble-small"
+    onClick={handleDirectToAI}
+  >
+    <span className="loader-letter">A</span>
+    <span className="loader-letter">I</span>
+    <span className="loader-letter"> </span>
+    <span className="loader-letter">A</span>
+    <span className="loader-letter">s</span>
+    <span className="loader-letter">s</span>
+    <span className="loader-letter">i</span>
+    <span className="loader-letter">s</span>
+    <span className="loader-letter">t</span>
+    <span className="loader-letter">a</span>
+    <span className="loader-letter">n</span>
+    <span className="loader-letter">t</span>
+    <div className="loader"></div>
+  </button>
+</div>
+
         </div>
 
         <div className="form-row" style={{ marginTop: '1.2rem' }}>
@@ -897,37 +951,40 @@ if (loading) {
           </label>
         </div>
 
-        <div
-          className="chatbot-footer-row"
-          style={{ marginTop: '1.2rem' }}
-        >
-          <div style={{ display: 'flex', gap: '0.6rem' }}>
-            <button
-              type="button"
-              className="btn-outline"
-              onClick={handleBackToStep1}
-            >
-              ← Back
-            </button>
+<div
+  className="chatbot-footer-row"
+  style={{ marginTop: '1.2rem' }}
+>
+  {/* მარცხნივ მარტო Back */}
+  <button
+    type="button"
+    className="btn-outline"
+    onClick={handleBackToStep1}
+  >
+    ← Back
+  </button>
 
-            <button
-              type="button"
-              className="btn-small-outline"
-              onClick={handleIdontKnow}
-            >
-              I don&apos;t know
-            </button>
-          </div>
+  {/* მარჯვნივ: I don't know + Continue */}
+  <div style={{ display: 'flex', gap: '0.6rem' }}>
+    <button
+      type="button"
+      className="btn-small-outline"
+      onClick={handleIdontKnow}
+    >
+      I don&apos;t know
+    </button>
 
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={handleContinueStep2}
-            disabled={!selectedToolId}
-          >
-            Continue
-          </button>
-        </div>
+    <button
+      type="button"
+      className="btn-primary"
+      onClick={handleContinueStep2}
+      disabled={!selectedToolId}
+    >
+      Continue
+    </button>
+  </div>
+</div>
+
       </section>
     </div>
   );

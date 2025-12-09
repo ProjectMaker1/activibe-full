@@ -104,12 +104,15 @@ button {
 /* Navbar */
 
 .navbar {
-  background: transparent; /* ან საერთოდ წაშალე background სტრიქონი */
-  border-bottom: 1px solid var(--border-soft); /* თუ კიდე გინდა ქვედა ხაზი, დატოვე */
+  background: var(--bg);           /* იგივე ფერი, რაც გვერდის ფონზეა */
+  border-bottom: 1px solid var(--border-soft);
   position: sticky;
   top: 0;
   z-index: 20;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+
 }
+
 
 
 .navbar-inner {
@@ -2539,4 +2542,729 @@ button {
   color: #2563eb;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
   font-size: 28px;
+}
+/* 🌙 DARK – Home hero ტექსტები სრულად თეთრი */
+.app-root.theme-dark .hero-inner h1,
+.app-root.theme-dark .hero-inner p {
+  color: #ffffff;
+}
+
+/* 🌙 DARK – "Why ActiVibe?" სათაური თეთრად */
+.app-root.theme-dark .home-page .section.why .section-title {
+  color: #ffffff;
+}
+/* 🌙 DARK – Campaigns page ტექსტები თეთრი */
+.app-root.theme-dark .campaigns-page {
+  color: #ffffff;
+}
+
+.app-root.theme-dark .campaigns-page .page-header h1,
+.app-root.theme-dark .campaigns-page .page-header p {
+  color: #ffffff;
+}
+
+.app-root.theme-dark .campaigns-page .campaigns-list p {
+  color: #e5e7eb; /* "No campaigns match your filters" და ა.შ. */
+}
+
+/* 🌙 DARK – search და filter ბოქსები შავი + თეთრი ტექსტი */
+.app-root.theme-dark .campaigns-page .search-input {
+  background: #020617;
+  border-color: #1f2937;
+  color: #f9fafb;
+}
+
+.app-root.theme-dark .campaigns-page .filter-pill {
+  background: #020617;
+  border-color: #1f2937;
+  color: #f9fafb;
+}
+
+
+
+/* 🌙 DARK – Country select (react-select) ბოქსი შავი + თეთრი ტექსტი */
+.app-root.theme-dark .campaigns-page .react-select__control {
+  background-color: #020617;
+  border-color: #1f2937;
+}
+
+.app-root.theme-dark .campaigns-page .react-select__single-value,
+.app-root.theme-dark .campaigns-page .react-select__placeholder,
+.app-root.theme-dark .campaigns-page .react-select__input-container {
+  color: #f9fafb;
+}
+
+.app-root.theme-dark .campaigns-page .react-select__menu {
+  background-color: #020617;
+  color: #f9fafb;
+}
+/* 🌙 DARK – Campaign modal მარჯვენა პანელი შავი + თეთრი ტექსტი */
+.app-root.theme-dark .campaign-modal-sidebar {
+  background: #020617;      /* თითქმის შავი ბოქსი */
+  color: #f9fafb;           /* default ტექსტი თეთრი */
+}
+
+.app-root.theme-dark .campaign-modal-sidebar h3 {
+  color: #f9fafb;           /* "Details" სათაური თეთრი */
+}
+
+.app-root.theme-dark .campaign-modal-details-label {
+  color: #9ca3af;           /* პატარა ზედა ლეიბლები ნაზი ნაცრისფერი */
+}
+
+.app-root.theme-dark .campaign-modal-details-value {
+  color: #f9fafb;           /* მნიშვნელობები (ქვეყანა, თარიღი და ა.შ.) თეთრი */
+}
+.date-filter {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-right: 1.8rem;   /* ადგილი ჩვენი calendar icon-ისთვის */
+  cursor: pointer;         /* რომ გაეგოს რომ კლიკებადია */
+}
+
+.date-filter-label {
+  font-size: 0.8rem;
+  color: #374151;
+}
+
+.date-filter-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.8rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* დავმალოთ native icon, რომ ჩვენი emoji გამოვიყენოთ */
+.date-filter-input::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  -webkit-appearance: none;
+}
+
+/* ჩვენი icon */
+.date-filter::after {
+  content: "📅";
+  position: absolute;
+  right: 0.75rem;
+  font-size: 0.9rem;
+  color: #374151;
+  pointer-events: none;  /* კლიკი ისევ input-ზე წავიდეს */
+}
+
+/* Dark mode – label + icon თეთრი */
+.app-root.theme-dark .campaigns-page .date-filter-label {
+  color: #f9fafb;
+}
+
+.app-root.theme-dark .campaigns-page .date-filter::after {
+  color: #f9fafb;
+}
+.date-filter {
+  border: 1px solid var(--border-soft);
+  background: #ffffff;
+  user-select: none;     /* რომ From / To ტექსტი აღარ გამოირჩევოდეს */
+}
+
+.date-filter:focus {
+  outline: none;
+}
+/* Smaller chatbot page AI bubble */
+.chatbot-ai-bubble {
+  transform: scale(0.55);      /* ზომის შემცირება */
+  margin-top: 0 !important;
+  margin-bottom: 0.5rem;
+}
+
+.chatbot-ai-bubble .loader {
+  animation: loader-rotate 2s linear infinite;
+}
+
+.chatbot-ai-bubble:hover {
+  transform: scale(0.6);
+  transition: 0.2s;
+}
+/* Direct to AI Row */
+.direct-ai-container {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  cursor: pointer;
+  margin-left: auto; /* მარჯვენა მხარეს დადგება */
+  user-select: none;
+}
+
+.direct-ai-text {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  transition: 0.2s ease;
+}
+
+.direct-ai-container:hover .direct-ai-text {
+  color: var(--primary-dark);
+  transform: translateX(-2px);
+}
+
+/* Smaller AI bubble */
+.ai-bubble-small {
+  transform: scale(0.52);
+  margin: 0;
+}
+.ai-bubble-small:hover {
+  transform: scale(0.56);
+}
+/* 🌙 DARK – ChatBot page containers & ტექსტები */
+
+/* ყველა დიდი ბარათი შავი ფონით */
+.app-root.theme-dark .chatbot-question-card,
+.app-root.theme-dark .chatbot-mentor-card,
+.app-root.theme-dark .chatbot-chat-sidebar,
+.app-root.theme-dark .chatbot-chat-main {
+  background: #020617;        /* შავი კონტეინერი */
+  color: #f9fafb;             /* თეთრი ტექსტი */
+}
+
+/* ქვე-ტექსტები, description-ები, ცარიელი სტეიტები */
+.app-root.theme-dark .chatbot-subtitle,
+.app-root.theme-dark .mentor-text p,
+.app-root.theme-dark .mentor-note,
+.app-root.theme-dark .chatbot-chat-empty,
+.app-root.theme-dark .chatbot-chat-empty-state,
+.app-root.theme-dark .chatbot-chat-sidebar-header,
+.app-root.theme-dark .chatbot-selected-info {
+  color: var(--text-muted);
+}
+
+/* Q1/Q2 – მარცხენა წრე + აიკონები */
+.app-root.theme-dark .chatbot-icon-grid {
+  background: #020617;
+}
+
+.app-root.theme-dark .chatbot-icon-circle {
+  background: #111827;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+  color: #f9fafb;
+}
+
+.app-root.theme-dark .chatbot-icon-circle.active {
+  background: var(--primary);
+}
+
+/* Q1/Q2 – topic chip-ები */
+.app-root.theme-dark .chatbot-topic-chip {
+  background: #020617;
+  border-color: #1f2937;
+  color: #f9fafb;
+}
+
+.app-root.theme-dark .chatbot-topic-chip.active {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Q2 – select-ები (თუ გლობალურმა .field-მა ვერ მოიცვა) */
+.app-root.theme-dark .chatbot-question-card .field select {
+  background: #020617;
+  border-color: #1f2937;
+  color: #f9fafb;
+}
+
+/* Mentor card-ში ტექსტები */
+.app-root.theme-dark .chatbot-mentor-card h2,
+.app-root.theme-dark .chatbot-mentor-card h3 {
+  color: #f9fafb;
+}
+
+/* CHAT – მარცხენა history list item-ები */
+.app-root.theme-dark .chatbot-chat-list-item {
+  background: #111827;
+  color: #f9fafb;
+}
+
+.app-root.theme-dark .chatbot-chat-list-item.active {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+/* CHAT – შეტყობინებების bubble-ები */
+.app-root.theme-dark .chatbot-chat-bubble {
+  background: #111827;
+  color: #e5e7eb;
+}
+
+.app-root.theme-dark .chatbot-chat-message.from-user .chatbot-chat-bubble {
+  background: var(--primary);
+  color: #ffffff;
+}
+
+/* CHAT – input ველი ქვემოთ */
+.app-root.theme-dark .chatbot-chat-input-bar input {
+  background: #020617;
+  border-color: #1f2937;
+  color: #f9fafb;
+}
+
+/* Direct to AI ტექსტი – უკვე var(--text-main)-ზეა, მაგრამ მაინც დავაფიქსოთ */
+.app-root.theme-dark .direct-ai-text {
+  color: #f9fafb;
+}
+/* 🌙 DARK – outline ტიპის ღილაკები: შავი ბექგრაუნდი + თეთრი ტექსტი */
+.app-root.theme-dark .btn-outline,
+.app-root.theme-dark .btn-small-outline {
+  background: #020617;
+  border-color: #1f2937;
+  color: #f9fafb;   /* თეთრი ასოები, რომ კარგად ჩანდეს */
+}
+
+.app-root.theme-dark .btn-outline:hover,
+.app-root.theme-dark .btn-small-outline:hover {
+  background: #020617;
+  border-color: #4b5563;
+}
+/* dark mode-ზე H1-ები იყოს თეთრი */
+.app-root.theme-dark .chatbot-page-title {
+  color: #ffffff !important;
+}
+/* 🌙 DARK MODE — react-select global fix for Signup page */
+.app-root.theme-dark .react-select__control {
+  background-color: #020617 !important;   /* შავი ბლოკი */
+  border-color: #1f2937 !important;
+  color: #f9fafb !important;               /* თეთრი ტექსტი */
+}
+
+.app-root.theme-dark .react-select__single-value {
+  color: #f9fafb !important;
+}
+
+.app-root.theme-dark .react-select__placeholder {
+  color: #9ca3af !important;
+}
+
+.app-root.theme-dark .react-select__menu {
+  background-color: #020617 !important;
+  border-color: #1f2937 !important;
+  color: #f9fafb !important;
+}
+
+.app-root.theme-dark .react-select__option {
+  background-color: #020617;
+  color: #f9fafb;
+}
+
+.app-root.theme-dark .react-select__option--is-focused {
+  background-color: #1f2937;
+}
+
+.app-root.theme-dark .react-select__option--is-selected {
+  background-color: #0c7b61; /* მწვანე highlight */
+  color: #ffffff;
+}
+.app-root.theme-dark .upload-page .page-header h1 {
+  color: #ffffff !important;
+}
+
+.app-root.theme-dark .upload-page .page-header p {
+  color: #d1d5db !important;
+}
+/* 🌙 DARK MODE — Upload dropzone container */
+.app-root.theme-dark .upload-dropzone {
+  background-color: #020617 !important;   /* შავი */
+  border: 2px dashed #1e293b !important;  /* სუსტად ნაცრისფერი ზოლი */
+  color: #ffffff !important;               /* ტექსტი თეთრი */
+}
+
+.app-root.theme-dark .upload-dropzone p {
+  color: #ffffff !important;
+}
+
+.app-root.theme-dark .upload-dropzone .upload-sub {
+  color: #d1d5db !important;
+}
+
+
+/* -------- Upload page – Date field -------- */
+
+.upload-page .date-click-wrapper {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  padding: 0.7rem 1rem;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+/* ყალბი placeholder */
+.upload-page .date-placeholder {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.9rem;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+/* input – ტექსტს ვმალავთ სანამ value არაა */
+.upload-page .date-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: transparent;
+}
+/* native date ტექსტი default-ში მთლიანად ვმალოთ (LIGHT + DARK) */
+.upload-page .date-input::-webkit-datetime-edit,
+.upload-page .date-input::-webkit-datetime-edit-fields-wrapper,
+.upload-page .date-input::-webkit-datetime-edit-text {
+  color: transparent;
+}
+
+/* native calendar icon დამალული */
+.upload-page .date-input::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* როცა value აქვს (.has-value wrapper-ზე) – ნორმალური ფერი */
+.upload-page .date-click-wrapper.has-value .date-input {
+  color: #111827;
+}
+
+.upload-page .date-click-wrapper.has-value .date-input::-webkit-datetime-edit,
+.upload-page .date-click-wrapper.has-value .date-input::-webkit-datetime-edit-fields-wrapper,
+.upload-page .date-click-wrapper.has-value .date-input::-webkit-datetime-edit-text {
+  color: #111827;
+}
+
+/* calendar emoji */
+.upload-page .calendar-icon {
+  margin-left: auto;
+  font-size: 1rem;
+  color: #6b7280;
+  pointer-events: none;
+}
+
+/* DARK MODE ვერსია მხოლოდ UploadPage-სთვის */
+.app-root.theme-dark .upload-page .date-click-wrapper {
+  background: #020617;
+  border-color: #1f2937;
+}
+
+.app-root.theme-dark .upload-page .date-click-wrapper.has-value .date-input {
+  color: #ffffff;
+}
+
+.app-root.theme-dark .upload-page .date-click-wrapper.has-value .date-input::-webkit-datetime-edit,
+.app-root.theme-dark .upload-page .date-click-wrapper.has-value .date-input::-webkit-datetime-edit-fields-wrapper,
+.app-root.theme-dark .upload-page .date-click-wrapper.has-value .date-input::-webkit-datetime-edit-text {
+  color: #ffffff;
+}
+
+.app-root.theme-dark .upload-page .calendar-icon {
+  color: #ffffff;
+}
+/* 🌙 DARK MODE – Admin panel */
+
+.app-root.theme-dark .admin-page {
+  color: #f9fafb; /* default ტექსტი თეთრი */
+}
+
+/* Header */
+.app-root.theme-dark .admin-page .page-header h1 {
+  color: #ffffff;
+}
+
+.app-root.theme-dark .admin-page .page-header p {
+  color: #d1d5db;
+}
+
+/* Sidebar */
+.app-root.theme-dark .admin-page .admin-sidebar {
+  background: #020617;              /* შავი ბოქსი */
+  border: 1px solid #1f2937;
+  color: #f9fafb;
+}
+
+.app-root.theme-dark .admin-page .admin-sidebar-title {
+  color: #ffffff;
+}
+
+/* Sidebar menu buttons – შავი ღილაკი, თეთრი წარწერა */
+.app-root.theme-dark .admin-page .admin-menu-item {
+  background: #020617;
+  color: #f9fafb;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.app-root.theme-dark .admin-page .admin-menu-item:hover {
+  border-color: #4b5563;
+}
+
+.app-root.theme-dark .admin-page .admin-menu-item.active {
+  background: #000000;
+  color: #ffffff;
+  border-color: #ffffff; /* ოდნავ გამოარჩენს აქტიურს */
+}
+
+/* მთავარი content */
+.app-root.theme-dark .admin-page .admin-main {
+  color: #f9fafb;
+}
+
+/* ცხრილები */
+.app-root.theme-dark .admin-page .admin-table {
+  background: #020617;
+}
+
+.app-root.theme-dark .admin-page .admin-table-header {
+  background: #111827;
+  color: #e5e7eb;
+}
+
+.app-root.theme-dark .admin-page .admin-table-row:nth-child(odd) {
+  background: #020617;
+}
+
+.app-root.theme-dark .admin-page .admin-table-row:nth-child(even) {
+  background: #020617; /* ძალიან ბევრი ზოლები რომ არ იყოს, ცოტა უფრო clean */
+}
+
+.app-root.theme-dark .admin-page .admin-table-row span {
+  color: #f9fafb;
+}
+
+/* Users table additional columns */
+.app-root.theme-dark .admin-page .admin-table-users-header {
+  background: #111827;
+}
+
+/* Admin country text/ფლაგი – რომ არ დაიბლიდეს */
+.app-root.theme-dark .admin-page .admin-country span {
+  color: #f9fafb;
+}
+
+/* Status pill-ებს და request-filter-btn-ებს არ ვეხებით – რჩებიან ფერადები */
+
+/* Admin მოდალი დარკში */
+.app-root.theme-dark .admin-page .admin-modal {
+  background: #020617;
+  color: #f9fafb;
+}
+
+.app-root.theme-dark .admin-page .admin-modal p {
+  color: #d1d5db;
+}
+/* 🌙 DARK – Admin status pills (ცხრილის შიგნით) */
+.app-root.theme-dark .status-pill.status-pending {
+  background: #facc15;   /* იგივე ფერი, რაც Pending-ზე გაქვს */
+  color: #111827;
+}
+
+.app-root.theme-dark .status-pill.status-approved {
+  background: #22c55e;   /* მწვანე */
+  color: #ffffff;        /* თეთრი ასოები */
+}
+
+.app-root.theme-dark .status-pill.status-rejected {
+  background: #f97373;   /* წითელი/ვარდისფერი */
+  color: #ffffff;
+}
+/* ---------- Categories manager (Admin -> Categories tab) ---------- */
+
+.categories-page h1 {
+  font-size: 1.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.categories-page p {
+  color: var(--text-muted);
+  margin-top: 0.2rem;
+}
+
+/* ზედა/ქვედა რიგები – ორი და ორი ბარათი */
+.categories-layout {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.categories-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+/* მობილურზე ერთ სვეტად ჩამოქაჩოს */
+@media (max-width: 900px) {
+  .categories-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* თითო ბარათი: Topics / Sub-topics / Tools */
+.categories-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 1.3rem 1.4rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.categories-card h2 {
+  margin: 0 0 0.8rem;
+}
+
+/* input + + ღილაკი ერთი ხაზზე */
+.categories-form-row {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+
+.categories-form-row input {
+  flex: 1;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  padding: 0.6rem 0.9rem;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+/* ტექსტი ბარათებში */
+.categories-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0.3rem 0 0.6rem;
+}
+
+/* სიები – bullet-ების გარეშე, მცირე ჰაერით */
+.categories-list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.categories-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Topics / Tools – clickable pill (link-btn) */
+.link-btn {
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  padding: 0.25rem 0.8rem;
+  background: #f9fafb;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--text-main);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.link-btn:hover {
+  background: #eef2ff;
+  border-color: #6366f1;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+}
+
+/* ამოვანათოთ ამორჩეული Topic/Tool */
+.categories-list-item.active .link-btn {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(12, 123, 97, 0.55);
+}
+
+/* Sub-topic / Sub-tool – პირველი span გახდეს ჩიპი ჩარჩოთი */
+.categories-list-item span:first-child {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.8rem;
+  border-radius: 999px;
+  background: #f9fafb;
+  border: 1px solid var(--border-soft);
+  font-size: 0.9rem;
+}
+
+/* პატარა X ღილაკი ჩიპის გვერდით */
+.btn-icon-danger {
+  border: none;
+  background: #ef4444;
+  color: #ffffff;
+  border-radius: 999px;
+  width: 22px;
+  height: 22px;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* რესპონსივი – ბარათები ქვევით ჩამოწვეს */
+@media (max-width: 900px) {
+  .categories-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 🌙 DARK MODE – Categories card-ები & ჩიპები */
+.app-root.theme-dark .categories-card {
+  background: #020617;
+  color: #f9fafb;
+}
+
+.app-root.theme-dark .categories-form-row input {
+  background: #020617;
+  border-color: #1f2937;
+  color: #f9fafb;
+}
+
+/* topics/tools pill */
+.app-root.theme-dark .link-btn {
+  background: #020617;
+  border-color: #1f2937;
+  color: #f9fafb;
+}
+
+.app-root.theme-dark .link-btn:hover {
+  background: #111827;
+  border-color: #4b5563;
+}
+
+/* active selected – ისევ მწვანე იყოს */
+.app-root.theme-dark .categories-list-item.active .link-btn {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+/* sub-topic / sub-tool ჩიპები */
+.app-root.theme-dark .categories-list-item span:first-child {
+  background: #020617;
+  border-color: #1f2937;
+  color: #f9fafb;
+}
+
+/* ტექსტები – თეთრი სათაურები */
+.app-root.theme-dark .categories-page h1,
+.app-root.theme-dark .categories-page h2 {
+  color: #ffffff;
 }

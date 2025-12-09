@@ -33,10 +33,7 @@ function CategoriesManager() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiRequest(
-        '/admin/categories',
-        withAuth(accessToken)
-      );
+      const res = await apiRequest('/admin/categories', withAuth(accessToken));
 
       setTopics(res.topics || []);
       setTools(res.tools || []);
@@ -82,9 +79,7 @@ function CategoriesManager() {
       };
 
       setTopics((prev) =>
-        [...prev, topicWithSubtopics].sort((a, b) =>
-          a.name.localeCompare(b.name)
-        )
+        [...prev, topicWithSubtopics].sort((a, b) => a.name.localeCompare(b.name))
       );
 
       setNewTopicName('');
@@ -150,9 +145,7 @@ function CategoriesManager() {
       };
 
       setTools((prev) =>
-        [...prev, toolWithSubTools].sort((a, b) =>
-          a.name.localeCompare(b.name)
-        )
+        [...prev, toolWithSubTools].sort((a, b) => a.name.localeCompare(b.name))
       );
       setNewToolName('');
 
@@ -266,155 +259,46 @@ function CategoriesManager() {
     }
   };
 
-  const selectedTopic =
-    topics.find((t) => t.id === selectedTopicId) || null;
-  const selectedTool =
-    tools.find((t) => t.id === selectedToolId) || null;
+  const selectedTopic = topics.find((t) => t.id === selectedTopicId) || null;
+  const selectedTool = tools.find((t) => t.id === selectedToolId) || null;
 
   return (
     <div className="categories-page">
       <h1>Categories</h1>
-      <p>
-        Manage topics, sub-topics and tools used in the campaign upload form.
-      </p>
+      <p>Manage topics, sub-topics and tools used in the campaign upload form.</p>
 
       {loading && <Loader />}
       {error && <p className="status-error">{error}</p>}
 
       {!loading && !error && (
-        <div className="categories-grid">
-          {/* --------- TOPICS --------- */}
-          <div className="categories-card">
-            <h2>Topics</h2>
+        <div className="categories-layout">
+          {/* ---- Row 1: Topics + Sub-topics ---- */}
+          <div className="categories-row">
+            {/* --------- TOPICS --------- */}
+            <div className="categories-card">
+              <h2>Topics</h2>
 
-            <form onSubmit={handleAddTopic} className="categories-form-row">
-              <input
-                type="text"
-                placeholder="New topic name..."
-                value={newTopicName}
-                onChange={(e) => setNewTopicName(e.target.value)}
-              />
-              <button type="submit" className="btn-small">
-                +
-              </button>
-            </form>
+              <form onSubmit={handleAddTopic} className="categories-form-row">
+                <input
+                  type="text"
+                  placeholder="New topic name..."
+                  value={newTopicName}
+                  onChange={(e) => setNewTopicName(e.target.value)}
+                />
+                <button type="submit" className="btn-small">
+                  +
+                </button>
+              </form>
 
-            {topics.length === 0 && <p>No topics yet.</p>}
+              {topics.length === 0 && <p>No topics yet.</p>}
 
-            {topics.length > 0 && (
-              <ul className="categories-list">
-                {topics.map((topic) => (
-                  <li
-                    key={topic.id}
-                    className={
-                      topic.id === selectedTopicId
-                        ? 'categories-list-item active'
-                        : 'categories-list-item'
-                    }
-                  >
-                    <button
-                      type="button"
-                      className="link-btn"
-                      onClick={() => setSelectedTopicId(topic.id)}
-                    >
-                      {topic.name}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-icon-danger"
-                      onClick={() => requestDelete('topic', topic)}
-                      title="Delete topic"
-                    >
-                      ×
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* --------- SUB-TOPICS --------- */}
-          <div className="categories-card">
-            <h2>Sub-topics</h2>
-
-            {selectedTopic ? (
-              <>
-                <p className="categories-subtitle">
-                  Selected topic: <strong>{selectedTopic.name}</strong>
-                </p>
-
-                <form
-                  onSubmit={handleAddSubTopic}
-                  className="categories-form-row"
-                >
-                  <input
-                    type="text"
-                    placeholder="New sub-topic name..."
-                    value={newSubTopicName}
-                    onChange={(e) => setNewSubTopicName(e.target.value)}
-                  />
-                  <button type="submit" className="btn-small">
-                    +
-                  </button>
-                </form>
-
-                {selectedTopic.subtopics.length === 0 && (
-                  <p>No sub-topics for this topic yet.</p>
-                )}
-
-                {selectedTopic.subtopics.length > 0 && (
-                  <ul className="categories-list">
-                    {selectedTopic.subtopics.map((s) => (
-                      <li key={s.id} className="categories-list-item">
-                        <span>{s.name}</span>
-                        <button
-                          type="button"
-                          className="btn-icon-danger"
-                          onClick={() => requestDelete('subtopic', s)}
-                          title="Delete sub-topic"
-                        >
-                          ×
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </>
-            ) : (
-              <p>Please create and select a topic first.</p>
-            )}
-          </div>
-
-          {/* --------- TOOLS + SUB-TOOLS --------- */}
-          <div className="categories-card">
-            <h2>Tools</h2>
-
-            {/* TOOLS LIST */}
-            <form onSubmit={handleAddTool} className="categories-form-row">
-              <input
-                type="text"
-                placeholder="New tool name..."
-                value={newToolName}
-                onChange={(e) => setNewToolName(e.target.value)}
-              />
-              <button type="submit" className="btn-small">
-                +
-              </button>
-            </form>
-
-            {tools.length === 0 && <p>No tools yet.</p>}
-
-            {tools.length > 0 && (
-              <>
-                <p className="categories-subtitle" style={{ marginTop: 8 }}>
-                  Tools
-                </p>
+              {topics.length > 0 && (
                 <ul className="categories-list">
-                  {tools.map((tool) => (
+                  {topics.map((topic) => (
                     <li
-                      key={tool.id}
+                      key={topic.id}
                       className={
-                        tool.id === selectedToolId
+                        topic.id === selectedTopicId
                           ? 'categories-list-item active'
                           : 'categories-list-item'
                       }
@@ -422,78 +306,190 @@ function CategoriesManager() {
                       <button
                         type="button"
                         className="link-btn"
-                        onClick={() => setSelectedToolId(tool.id)}
+                        onClick={() => setSelectedTopicId(topic.id)}
                       >
-                        {tool.name}
+                        {topic.name}
                       </button>
                       <button
                         type="button"
                         className="btn-icon-danger"
-                        onClick={() => requestDelete('tool', tool)}
-                        title="Delete tool"
+                        onClick={() => requestDelete('topic', topic)}
+                        title="Delete topic"
                       >
                         ×
                       </button>
                     </li>
                   ))}
                 </ul>
-              </>
-            )}
+              )}
+            </div>
 
-            {/* SUB-TOOLS FOR SELECTED TOOL */}
-            <h2 style={{ marginTop: 24 }}>Sub-tools</h2>
-            <div style={{ marginTop: 8 }}>
-              {selectedTool ? (
+            {/* --------- SUB-TOPICS --------- */}
+            <div className="categories-card">
+              <h2>Sub-topics</h2>
 
+              {selectedTopic ? (
                 <>
                   <p className="categories-subtitle">
-                    Selected tool: <strong>{selectedTool.name}</strong>
+                    Selected topic: <strong>{selectedTopic.name}</strong>
                   </p>
 
                   <form
-                    onSubmit={handleAddSubTool}
+                    onSubmit={handleAddSubTopic}
                     className="categories-form-row"
                   >
                     <input
                       type="text"
-                      placeholder="New sub-tool name..."
-                      value={newSubToolName}
-                      onChange={(e) => setNewSubToolName(e.target.value)}
+                      placeholder="New sub-topic name..."
+                      value={newSubTopicName}
+                      onChange={(e) => setNewSubTopicName(e.target.value)}
                     />
                     <button type="submit" className="btn-small">
                       +
                     </button>
                   </form>
 
-                  {(!selectedTool.subTools ||
-                    selectedTool.subTools.length === 0) && (
-                    <p>No sub-tools for this tool yet.</p>
+                  {selectedTopic.subtopics.length === 0 && (
+                    <p>No sub-topics for this topic yet.</p>
                   )}
 
-                  {selectedTool.subTools &&
-                    selectedTool.subTools.length > 0 && (
-                      <ul className="categories-list">
-                        {selectedTool.subTools.map((s) => (
-                          <li key={s.id} className="categories-list-item">
-                            <span>{s.name}</span>
-                            <button
-                              type="button"
-                              className="btn-icon-danger"
-                              onClick={() => requestDelete('subtool', s)}
-                              title="Delete sub-tool"
-                            >
-                              ×
-                            </button>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                  {selectedTopic.subtopics.length > 0 && (
+                    <ul className="categories-list">
+                      {selectedTopic.subtopics.map((s) => (
+                        <li key={s.id} className="categories-list-item">
+                          <span>{s.name}</span>
+                          <button
+                            type="button"
+                            className="btn-icon-danger"
+                            onClick={() => requestDelete('subtopic', s)}
+                            title="Delete sub-topic"
+                          >
+                            ×
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </>
               ) : (
-                <p style={{ marginTop: 8 }}>
-                  Please create and select a tool to manage its sub-tools.
-                </p>
+                <p>Please create and select a topic first.</p>
               )}
+            </div>
+          </div>
+
+          {/* ---- Row 2: Tools + Sub-tools ---- */}
+          <div className="categories-row">
+            {/* --------- TOOLS --------- */}
+            <div className="categories-card">
+              <h2>Tools</h2>
+
+              <form onSubmit={handleAddTool} className="categories-form-row">
+                <input
+                  type="text"
+                  placeholder="New tool name..."
+                  value={newToolName}
+                  onChange={(e) => setNewToolName(e.target.value)}
+                />
+                <button type="submit" className="btn-small">
+                  +
+                </button>
+              </form>
+
+              {tools.length === 0 && <p>No tools yet.</p>}
+
+              {tools.length > 0 && (
+                <>
+                  <p className="categories-subtitle" style={{ marginTop: 8 }}>
+                    Tools
+                  </p>
+                  <ul className="categories-list">
+                    {tools.map((tool) => (
+                      <li
+                        key={tool.id}
+                        className={
+                          tool.id === selectedToolId
+                            ? 'categories-list-item active'
+                            : 'categories-list-item'
+                        }
+                      >
+                        <button
+                          type="button"
+                          className="link-btn"
+                          onClick={() => setSelectedToolId(tool.id)}
+                        >
+                          {tool.name}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-icon-danger"
+                          onClick={() => requestDelete('tool', tool)}
+                          title="Delete tool"
+                        >
+                          ×
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+
+            {/* --------- SUB-TOOLS --------- */}
+            <div className="categories-card">
+              <h2>Sub-tools</h2>
+
+              <div style={{ marginTop: 8 }}>
+                {selectedTool ? (
+                  <>
+                    <p className="categories-subtitle">
+                      Selected tool: <strong>{selectedTool.name}</strong>
+                    </p>
+
+                    <form
+                      onSubmit={handleAddSubTool}
+                      className="categories-form-row"
+                    >
+                      <input
+                        type="text"
+                        placeholder="New sub-tool name..."
+                        value={newSubToolName}
+                        onChange={(e) => setNewSubToolName(e.target.value)}
+                      />
+                      <button type="submit" className="btn-small">
+                        +
+                      </button>
+                    </form>
+
+                    {(!selectedTool.subTools ||
+                      selectedTool.subTools.length === 0) && (
+                      <p>No sub-tools for this tool yet.</p>
+                    )}
+
+                    {selectedTool.subTools &&
+                      selectedTool.subTools.length > 0 && (
+                        <ul className="categories-list">
+                          {selectedTool.subTools.map((s) => (
+                            <li key={s.id} className="categories-list-item">
+                              <span>{s.name}</span>
+                              <button
+                                type="button"
+                                className="btn-icon-danger"
+                                onClick={() => requestDelete('subtool', s)}
+                                title="Delete sub-tool"
+                              >
+                                ×
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                  </>
+                ) : (
+                  <p style={{ marginTop: 8 }}>
+                    Please create and select a tool to manage its sub-tools.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>

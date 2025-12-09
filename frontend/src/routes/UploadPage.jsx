@@ -38,6 +38,8 @@ function UploadPage() {
   // ბევრი ფაილი: [{ file: File, preview: string }]
   const [files, setFiles] = useState([]);
 
+
+
   // load topics + tools for dropdowns
   useEffect(() => {
     const loadCategories = async () => {
@@ -52,6 +54,19 @@ function UploadPage() {
 
     loadCategories();
   }, []);
+const openCalendar = (e) => {
+  e.stopPropagation();
+  const el = document.getElementById('upload-date-input');
+  if (!el) return;
+
+  // თუ ბრაუზერი მხარს უჭერს showPicker-ს
+  if (typeof el.showPicker === 'function') {
+    el.showPicker();
+  } else {
+    el.focus(); // fallback
+  }
+};
+
 
   const handleTopicChange = (e) => {
     const topicId = Number(e.target.value);
@@ -352,14 +367,32 @@ for (let index = 0; index < files.length; index++) {
           />
         </label>
 
-        <label className="field">
-          <span>Date</span>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-        </label>
+
+<label className="field">
+  <span>Date</span>
+
+<div
+  className={`date-click-wrapper ${date ? 'has-value' : ''}`}
+  onClick={openCalendar}
+>
+  {!date && (
+    <span className="date-placeholder">dd/mm/yyyy</span>
+  )}
+
+  <input
+    id="upload-date-input"
+    type="date"
+    value={date}
+    onChange={(e) => setDate(e.target.value)}
+    className="date-input"
+  />
+
+  <span className="calendar-icon">📅</span>
+</div>
+
+</label>
+
+
 
         <div className="form-row">
           <label className="field">

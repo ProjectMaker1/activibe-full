@@ -1,5 +1,5 @@
 // frontend/src/routes/CampaignsPage.jsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import CampaignCard from '../components/CampaignCard.jsx';
 import CampaignModal from '../components/CampaignModal.jsx';
 import { apiRequest, withAuth } from '@shared/apiClient.js';
@@ -58,6 +58,8 @@ function CampaignsPage() {
         console.error('Failed to load categories', err);
       });
   }, []);
+const fromInputRef = useRef(null);
+const toInputRef = useRef(null);
 
   // topic/subtopic options
   const currentTopicObj = topics.find((t) => t.name === filterTopic) || null;
@@ -333,43 +335,61 @@ function CampaignsPage() {
             ))}
           </select>
 
-          {/* Date range */}
-          <div
-            className="filter-pill"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.4rem',
-              paddingRight: '0.7rem',
-            }}
-          >
-            <span style={{ fontSize: '0.8rem', color: '#374151' }}>
-              Date:
-            </span>
-            <input
-              type="date"
-              value={filterDateFrom}
-              onChange={handleDateFromChange}
-              style={{
-                border: 'none',
-                outline: 'none',
-                fontSize: '0.8rem',
-                background: 'transparent',
-              }}
-            />
-            <span style={{ fontSize: '0.8rem' }}>–</span>
-            <input
-              type="date"
-              value={filterDateTo}
-              onChange={handleDateToChange}
-              style={{
-                border: 'none',
-                outline: 'none',
-                fontSize: '0.8rem',
-                background: 'transparent',
-              }}
-            />
-          </div>
+{/* Date range */}
+<button
+  type="button"
+  className="filter-pill date-filter"
+  onClick={() => {
+    if (fromInputRef.current) {
+      if (fromInputRef.current.showPicker) {
+        fromInputRef.current.showPicker();       // Chrome, Edge, Opera
+      } else {
+        fromInputRef.current.focus();            // fallback – მაინც focus
+        fromInputRef.current.click?.();
+      }
+    }
+  }}
+>
+  <span className="date-filter-label">From</span>
+  <input
+    ref={fromInputRef}
+    id="date-from"
+    type="date"
+    value={filterDateFrom}
+    onChange={handleDateFromChange}
+    className="date-filter-input"
+    onClick={(e) => e.stopPropagation()} // რომ input-ზე კლიკმა button-ს onclick არ გაუშვას უკვე
+  />
+</button>
+
+<button
+  type="button"
+  className="filter-pill date-filter"
+  onClick={() => {
+    if (toInputRef.current) {
+      if (toInputRef.current.showPicker) {
+        toInputRef.current.showPicker();
+      } else {
+        toInputRef.current.focus();
+        toInputRef.current.click?.();
+      }
+    }
+  }}
+>
+  <span className="date-filter-label">To</span>
+  <input
+    ref={toInputRef}
+    id="date-to"
+    type="date"
+    value={filterDateTo}
+    onChange={handleDateToChange}
+    className="date-filter-input"
+    onClick={(e) => e.stopPropagation()}
+  />
+</button>
+
+
+
         </div>
       </section>
 
