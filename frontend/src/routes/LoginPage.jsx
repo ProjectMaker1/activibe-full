@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { validateEmail, validatePassword } from '@shared/validators.js';
+import Loader from '../components/Loader.jsx';
 
 function LoginPage() {
   const { login } = useAuth();
@@ -13,6 +14,9 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  if (submitting) {
+    return <Loader />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,9 +71,10 @@ function LoginPage() {
             </p>
           )}
 
-          <button type="submit" className="btn-primary" disabled={submitting}>
-            {submitting ? 'Logging in...' : 'Login'}
-          </button>
+        <button type="submit" className="btn-primary" disabled={submitting}>
+          Login
+        </button>
+
         </form>
 
         <p className="auth-switch">

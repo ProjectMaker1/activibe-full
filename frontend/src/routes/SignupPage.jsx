@@ -11,6 +11,7 @@ import {
 import Select from 'react-select';
 import countryList from 'react-select-country-list';
 import 'flag-icons/css/flag-icons.min.css';
+import Loader from '../components/Loader.jsx';
 
 function SignupPage() {
   const { signup } = useAuth();
@@ -23,6 +24,9 @@ function SignupPage() {
   const [country, setCountry] = useState(null);
   const [status, setStatus] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  if (submitting) {
+    return <Loader />;
+  }
 
   // ქვეყნების ლისტი – label/value უბრალო სტრინგებია, ამიტომ search ნორმალურად მუშაობს
   const countryOptions = useMemo(() => countryList().getData(), []);
@@ -122,10 +126,10 @@ function SignupPage() {
               {status.message}
             </p>
           )}
+<button type="submit" className="btn-primary" disabled={submitting}>
+  Sign Up
+</button>
 
-          <button type="submit" className="btn-primary" disabled={submitting}>
-            {submitting ? 'Signing up...' : 'Sign Up'}
-          </button>
         </form>
 
         <p className="auth-switch">
