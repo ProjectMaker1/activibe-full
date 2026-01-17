@@ -133,12 +133,7 @@ button {
   letter-spacing: 0.02em;
 }
 
-.logo-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: var(--primary);
-}
+
 
 .navbar-nav {
   display: flex;
@@ -168,6 +163,36 @@ button {
   font-size: 0.85rem;
   color: var(--text-muted);
 }
+/* Logo container */
+.logo-slot{
+  display:inline-flex;
+  align-items:center;
+  height:32px;
+  overflow:visible;
+}
+
+/* ორივე სურათს ერთნაირი ზომა/ტრანსფორმი აქვს */
+.logo-img{
+  height:100%;
+  width:auto;
+  display:block;
+
+  transform: scale(5.2);
+  transform-origin: left center;
+  translate: 0 -2px;
+
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
+}
+
+/* default (LIGHT): dark svg დავმალოთ */
+.logo-img--dark{ display:none; }
+.logo-img--light{ display:block; }
+
+/* DARK theme: light svg დავმალოთ, dark svg გამოვაჩინოთ */
+.app-root.theme-dark .logo-img--light{ display:none; }
+.app-root.theme-dark .logo-img--dark{ display:block; }
+
+
 
 /* Buttons */
 

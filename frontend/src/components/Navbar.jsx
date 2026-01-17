@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
-function Navbar({ theme, onToggleTheme }) {
+function Navbar({ theme, onToggleTheme, introActive }) {
   const {
     isAuthenticated,
     user,
@@ -36,10 +36,22 @@ function Navbar({ theme, onToggleTheme }) {
   return (
     <header className="navbar">
       <div className="navbar-inner">
-        <Link to="/" className="navbar-logo">
-          <span className="logo-icon" />
-          <span className="logo-text">ActiVibe</span>
-        </Link>
+<Link to="/" className="navbar-logo" aria-label="ActiVibe home">
+  <span className="logo-slot" style={{ opacity: introActive ? 0 : 1 }}>
+    <img
+      src="/actilogo-static.svg"
+      alt="ActiVibe"
+      className="logo-img logo-img--light"
+    />
+    <img
+      src="/actilogo-static-dark.svg"
+      alt="ActiVibe"
+      className="logo-img logo-img--dark"
+    />
+  </span>
+</Link>
+
+
 
         <nav className="navbar-nav">
           <NavLink to="/" className="nav-link">

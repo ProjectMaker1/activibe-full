@@ -11,6 +11,7 @@ import SignupPage from './routes/SignupPage.jsx';
 import AdminPanelPage from './routes/AdminPanelPage.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import IntroLogoOverlay from './components/IntroLogoOverlay.jsx';
 
 function App() {
   // light / dark theme toggle
@@ -20,15 +21,14 @@ function App() {
     setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
   };
 
+  // ✅ Intro overlay state (პირველ შესვლაზე/refresh-ზე)
+  const [introActive, setIntroActive] = useState(true);
+
   // ❌ ბექგრაუნდის ფოტოები ამოვიღეთ, მარტო ფერი დავტოვეთ
   const rootStyle =
     theme === 'light'
-      ? {
-          backgroundColor: '#fff3d3',
-        }
-      : {
-          backgroundColor: '#3b213d',
-        };
+      ? { backgroundColor: '#fff3d3' }
+      : { backgroundColor: '#3b213d' };
 
   // theme class – რომ CSS ცვლადები შევცვალოთ
   const rootClassName =
@@ -37,10 +37,21 @@ function App() {
   return (
     <AuthProvider>
       <div className={rootClassName} style={rootStyle}>
-        <Navbar theme={theme} onToggleTheme={toggleTheme} />
+        {/* ✅ Intro overlay (blur + animated logo draw + move to navbar logo-slot) */}
+        {introActive && (
+          <IntroLogoOverlay onDone={() => setIntroActive(false)} />
+        )}
+
+        {/* ✅ Navbar-ს ვაწვდით introActive-ს, რომ static logo დამალოს სანამ intro მიდის */}
+        <Navbar
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          introActive={introActive}
+        />
+
         <main className="app-main">
           <Routes>
-          <Route path="/" element={<HomePage theme={theme} />} />
+            <Route path="/" element={<HomePage theme={theme} />} />
             <Route path="/campaigns" element={<CampaignsPage />} />
             <Route path="/chatbot" element={<ChatBotPage />} />
 
