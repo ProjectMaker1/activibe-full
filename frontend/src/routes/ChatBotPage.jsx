@@ -3,7 +3,40 @@ import React, { useEffect, useState } from 'react';
 import { apiRequest, withAuth } from '@shared/apiClient.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import Loader from '../components/Loader.jsx';
+function TypingDots() {
+  return (
+    <>
+      <span className="av-typing-dots" aria-label="Assistant is typing">
+        <span />
+        <span />
+        <span />
+      </span>
 
+      <style>{`
+        .av-typing-dots{
+          display:inline-flex;
+          align-items:center;
+          gap:6px;
+          padding:2px 0;
+        }
+        .av-typing-dots span{
+          width:6px;
+          height:6px;
+          border-radius:999px;
+          background: rgba(0,0,0,0.35);
+          display:inline-block;
+          animation: avTyping 1.2s infinite ease-in-out;
+        }
+        .av-typing-dots span:nth-child(2){ animation-delay: .15s; }
+        .av-typing-dots span:nth-child(3){ animation-delay: .30s; }
+        @keyframes avTyping{
+          0%, 80%, 100% { transform: translateY(0); opacity:.35; }
+          40% { transform: translateY(-3px); opacity:1; }
+        }
+      `}</style>
+    </>
+  );
+}
 const TOPIC_ICON_MAP = {
   'Democracy, Freedom & Governance': '🗳️',
   'Environmental & Climate Justice': '🌍',
@@ -80,7 +113,7 @@ function ChatBotPage() {
   const [activeChatId, setActiveChatId] = useState(null);
 
   const [currentMessage, setCurrentMessage] = useState('');
-
+const [isSending, setIsSending] = useState(false);
   // answers
   const [selectedTopicId, setSelectedTopicId] = useState(null);
   const [selectedToolId, setSelectedToolId] = useState('');
@@ -268,129 +301,210 @@ if (!cancelled) {
     setCurrentMessage('');
   };
 
-  /* ---------- მესიჯის გაგზავნა (auth → DB, guest → localStorage) ---------- */
+ 
   const handleSendMessage = async (e) => {
-    e.preventDefault();
-    if (!activeChat || !currentMessage.trim()) return;
+  e.preventDefault();
+  if (!activeChat || !currentMessage.trim() || isSending) return;
 
-    const text = currentMessage.trim();
-    setCurrentMessage('');
+  const text = currentMessage.trim();
+  setCurrentMessage('');
 
-    const hasToken = !!tokens?.accessToken;
+  const hasToken = !!tokens?.accessToken;
 
-    // 🔹 ავტორიზებული იუზერი → backend
+  // 1) Optimistic UI: user მესიჯი + typing indicator
+  const nowTs = new Date().toISOString();
+  const optimisticUserMsg = {
+    id: `u-${Date.now()}`,
+    from: 'user',
+    text,
+    ts: nowTs,
+    _optimistic: true,
+  };
+  const typingMsg = {
+    id: `t-${Date.now()}`,
+    from: 'bot',
+    text: '',
+    ts: nowTs,
+    _typing: true,
+    _optimistic: true,
+  };
+
+  // state-ში ეგრევე დავამატოთ ორივე
+  setChats((prev) => {
+    const updated = prev.map((chat) =>
+      chat.id === activeChat.id
+        ? { ...chat, messages: [...(chat.messages || []), optimisticUserMsg, typingMsg] }
+        : chat
+    );
+    // guest შემთხვევაში localStorage-შიც შევინახოთ
+    if (!hasToken) saveGuestChats(updated);
+    return updated;
+  });
+
+  // 2) API call
+  setIsSending(true);
+  try {
     if (hasToken) {
-      try {
-        const res = await apiRequest(
-          `/chat/sessions/${activeChat.id}/messages`,
-          withAuth(tokens.accessToken, {
-            method: 'POST',
-            body: { text },
+      const res = await apiRequest(
+        `/chat/sessions/${activeChat.id}/messages`,
+        withAuth(tokens.accessToken, {
+          method: 'POST',
+          body: { text },
+        })
+      );
+
+      // backend expected: { userMessage, botMessage }
+      if (res?.userMessage && res?.botMessage) {
+        setChats((prev) =>
+          prev.map((chat) => {
+            if (chat.id !== activeChat.id) return chat;
+
+            // მოვაშოროთ optimistic user + typing
+            const cleaned = (chat.messages || []).filter((m) => !m._optimistic);
+            return { ...chat, messages: [...cleaned, res.userMessage, res.botMessage] };
           })
         );
-
-        if (res && res.message) {
-          const msg = res.message; // { id, from, text, ts }
-          setChats((prev) =>
-            prev.map((chat) =>
-              chat.id === activeChat.id
-                ? { ...chat, messages: [...chat.messages, msg] }
-                : chat
-            )
-          );
-          return;
-        }
-
-        // fallback – თუ message არ მოვიდა, მაინც დავამატოთ user მესიჯი
-        const nowTs = new Date().toISOString();
+      } else {
+        // თუ უცნაური პასუხია, typing მოხსნას და error ჩასვას
         setChats((prev) =>
-          prev.map((chat) =>
-            chat.id === activeChat.id
-              ? {
-                  ...chat,
-                  messages: [
-                    ...chat.messages,
-                    { id: Date.now(), from: 'user', text, ts: nowTs },
-                  ],
-                }
-              : chat
-          )
-        );
-      } catch (err) {
-        console.error('Failed to send message', err);
-      }
-      return;
-    }
-
-    // 🔹 guest → მხოლოდ state + localStorage
-    const nowTs = new Date().toISOString();
-    setChats((prev) => {
-      const updated = prev.map((chat) =>
-        chat.id === activeChat.id
-          ? {
+          prev.map((chat) => {
+            if (chat.id !== activeChat.id) return chat;
+            const cleaned = (chat.messages || []).filter((m) => !m._typing);
+            return {
               ...chat,
               messages: [
-                ...chat.messages,
-                { id: Date.now(), from: 'user', text, ts: nowTs },
+                ...cleaned,
+                {
+                  id: `err-${Date.now()}`,
+                  from: 'bot',
+                  text: "Sorry — something went wrong. Please try again.",
+                  ts: new Date().toISOString(),
+                },
               ],
-            }
-          : chat
-      );
-      saveGuestChats(updated);
-      return updated;
-    });
-  };
-
-  /* ---------- ჩატის წაშლა (auth → DB, guest → localStorage) ---------- */
-  const handleDeleteChat = async (chatId) => {
-    const chatToDelete = chats.find((c) => c.id === chatId);
-    if (!chatToDelete) return;
-
-    const ok = window.confirm(
-      'Are you sure you want to delete this conversation?'
-    );
-    if (!ok) return;
-
-    const hasToken = !!tokens?.accessToken;
-
-    // 🔹 ავტორიზებული იუზერი → backend + state
-    if (hasToken) {
-      try {
-        await apiRequest(
-          `/chat/sessions/${chatId}`,
-          withAuth(tokens.accessToken, {
-            method: 'DELETE',
+            };
           })
         );
-
-        setChats((prev) => {
-          const updated = prev.filter((c) => c.id !== chatId);
-          const stillHasActive = updated.some(
-            (c) => c.id === activeChatId
-          );
-          if (!stillHasActive) {
-            setActiveChatId(updated.length ? updated[0].id : null);
-          }
-          return updated;
-        });
-      } catch (err) {
-        console.error('Failed to delete chat', err);
       }
       return;
     }
+// ✅ ჩატის წაშლა (auth → backend, guest → localStorage)
+const handleDeleteChat = async (chatId) => {
+  const chatToDelete = chats.find((c) => c.id === chatId);
+  if (!chatToDelete) return;
 
-    // 🔹 guest → მხოლოდ state + localStorage
-    setChats((prev) => {
-      const updated = prev.filter((c) => c.id !== chatId);
-      const stillHasActive = updated.some((c) => c.id === activeChatId);
-      if (!stillHasActive) {
-        setActiveChatId(updated.length ? updated[0].id : null);
-      }
-      saveGuestChats(updated);
-      return updated;
-    });
-  };
+  const ok = window.confirm('Are you sure you want to delete this conversation?');
+  if (!ok) return;
 
+  const hasToken = !!tokens?.accessToken;
+
+  // 🔹 auth user → backend delete
+  if (hasToken) {
+    try {
+      await apiRequest(
+        `/chat/sessions/${chatId}`,
+        withAuth(tokens.accessToken, { method: 'DELETE' })
+      );
+
+      setChats((prev) => {
+        const updated = prev.filter((c) => c.id !== chatId);
+        if (activeChatId === chatId) {
+          setActiveChatId(updated.length ? updated[0].id : null);
+        }
+        return updated;
+      });
+      return;
+    } catch (err) {
+      console.error('Failed to delete chat', err);
+      return;
+    }
+  }
+
+  // 🔹 guest → state + localStorage
+  setChats((prev) => {
+    const updated = prev.filter((c) => c.id !== chatId);
+    if (activeChatId === chatId) {
+      setActiveChatId(updated.length ? updated[0].id : null);
+    }
+    saveGuestChats(updated);
+    return updated;
+  });
+};
+// ✅ guest → backend guest-reply endpoint
+const res = await apiRequest('/chat/guest/reply', {
+  method: 'POST',
+  body: {
+    text,
+    sessionMeta: {
+      topicName: activeChat.topicName || null,
+      mentorName: activeChat.mentorName || null,
+      toolName: activeChat.toolName || null,
+      subToolName: activeChat.subToolName || null,
+    },
+    history: (activeChat.messages || [])
+      .filter((m) => !m._typing)          // typing არ გადავუგზავნოთ
+      .slice(-10)
+      .map((m) => ({
+        from: String(m.from || '').toUpperCase() === 'USER' ? 'USER' : 'BOT',
+        text: m.text || '',
+      })),
+  },
+});
+
+// typing-ის მოხსნა + bot პასუხის ჩასმა localStorage-ში
+setChats((prev) => {
+  const updated = prev.map((chat) => {
+    if (chat.id !== activeChat.id) return chat;
+
+    const cleaned = (chat.messages || []).filter((m) => !m._typing);
+    const botMessage = res?.botMessage || {
+      id: `g-b-${Date.now()}`,
+      from: 'bot',
+      text: "Sorry — I’m having trouble answering right now.",
+      ts: new Date().toISOString(),
+    };
+
+    return {
+      ...chat,
+      messages: [
+        ...cleaned.map((m) => ({ ...m, _optimistic: undefined })), // opt flags cleanup
+        {
+          ...botMessage,
+          from: 'bot', // guest UI consistent
+        },
+      ],
+    };
+  });
+
+  saveGuestChats(updated);
+  return updated;
+});
+return;
+  } catch (err) {
+    console.error('Failed to send message', err);
+
+    // typing indicator შეცვალე error მესიჯით
+    setChats((prev) =>
+      prev.map((chat) => {
+        if (chat.id !== activeChat.id) return chat;
+        const cleaned = (chat.messages || []).filter((m) => !m._typing);
+        return {
+          ...chat,
+          messages: [
+            ...cleaned,
+            {
+              id: `err-${Date.now()}`,
+              from: 'bot',
+              text: "Sorry — I’m having trouble answering right now. Please try again.",
+              ts: new Date().toISOString(),
+            },
+          ],
+        };
+      })
+    );
+  } finally {
+    setIsSending(false);
+  }
+};
   /* ---------- Step change handlers ---------- */
 
   const handleSelectTopic = (topicId) => {
@@ -560,20 +674,20 @@ if (loading) {
                   {activeChat.messages.map((msg) => (
                     <div
                       key={msg.id}
-                      className={`chatbot-chat-message ${
-                        msg.from === 'user' ? 'from-user' : 'from-bot'
-                      }`}
+className={`chatbot-chat-message ${
+  String(msg.from).toLowerCase() === 'user' ? 'from-user' : 'from-bot'
+}`}
                     >
-                      {msg.from === 'bot' && activeAvatarSrc && (
+                      {String(msg.from).toLowerCase() === 'bot' && activeAvatarSrc && (
                         <img
                           src={activeAvatarSrc}
                           alt={activeChat.mentorName}
                           className="chatbot-chat-message-avatar"
                         />
                       )}
-                      <div className="chatbot-chat-bubble">
-                        {msg.text}
-                      </div>
+                    <div className="chatbot-chat-bubble">
+                      {msg._typing ? <TypingDots /> : msg.text}
+                    </div>
                     </div>
                   ))}
                 </div>
@@ -591,9 +705,9 @@ if (loading) {
                   <button
                     type="submit"
                     className="btn-primary"
-                    disabled={!currentMessage.trim() || !activeChat}
+                    disabled={!currentMessage.trim() || !activeChat || isSending}
                   >
-                    Send
+                    {isSending ? '...' : 'Send'}
                   </button>
                 </form>
               </>

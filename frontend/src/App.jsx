@@ -53,6 +53,7 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage theme={theme} />} />
             <Route path="/campaigns" element={<CampaignsPage />} />
+            <Route path="/campaigns/:id" element={<CampaignsPage />} />
             <Route path="/chatbot" element={<ChatBotPage />} />
 
             <Route

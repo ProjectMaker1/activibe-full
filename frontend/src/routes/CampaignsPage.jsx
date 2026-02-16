@@ -4,6 +4,7 @@ import CampaignCard from '../components/CampaignCard.jsx';
 import CampaignModal from '../components/CampaignModal.jsx';
 import { apiRequest, withAuth } from '@shared/apiClient.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import Select from 'react-select';
 import countryList from 'react-select-country-list';
@@ -14,6 +15,9 @@ const PAGE_SIZE = 30;
 
 function CampaignsPage() {
   const { tokens, isAdmin } = useAuth();   // 👈 ეს ხაზი უნდა დაემატოს აქვე
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const selectedIdFromUrl = id ? Number(id) : null;
 
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,8 +62,22 @@ function CampaignsPage() {
         console.error('Failed to load categories', err);
       });
   }, []);
-const fromInputRef = useRef(null);
-const toInputRef = useRef(null);
+  const fromInputRef = useRef(null);
+  const toInputRef = useRef(null);
+
+  // URL -> selected (deep link support)
+  useEffect(() => {
+    if (!selectedIdFromUrl) return;
+    const found = campaigns.find((c) => c.id === selectedIdFromUrl) || null;
+    setSelected(found);
+  }, [selectedIdFromUrl, campaigns]);
+
+  // if URL has no id, ensure modal is closed
+  useEffect(() => {
+    if (!selectedIdFromUrl && selected) {
+      setSelected(null);
+    }
+  }, [selectedIdFromUrl]);
 
   // topic/subtopic options
   const currentTopicObj = topics.find((t) => t.name === filterTopic) || null;
@@ -108,6 +126,7 @@ const toInputRef = useRef(null);
     setFilterDateTo(e.target.value);
     setCurrentPage(1);
   };
+
   const handleDeleteCampaign = async (id) => {
     // უსაფრთხოება — თუ არ არის ადმინი ან არ აქვს ტოკენი, არაფერს ვაკეთებთ
     if (!isAdmin || !tokens?.accessToken) return;
@@ -120,15 +139,16 @@ const toInputRef = useRef(null);
 
       // წავშალოთ კამპანია ლოკალური სიიდან
       setCampaigns((prev) => prev.filter((c) => c.id !== id));
-      // დავხუროთ მოდალი
+      // დავხუროთ მოდალი + URL დავაბრუნოთ
       setSelected(null);
+      navigate('/campaigns');
     } catch (err) {
       console.error(err);
       alert(err.message || 'Failed to delete campaign');
     }
   };
 
-    const handleSubToolChange = (e) => {
+  const handleSubToolChange = (e) => {
     setFilterSubTool(e.target.value);
     setCurrentPage(1);
   };
@@ -176,7 +196,6 @@ const toInputRef = useRef(null);
         return false;
       }
 
-
       // date range filter
       if (filterDateFrom || filterDateTo) {
         if (!c.date) return false;
@@ -208,6 +227,7 @@ const toInputRef = useRef(null);
     filterSubTool,
     filterDateFrom,
     filterDateTo,
+    tools,
   ]);
 
   // pagination
@@ -224,9 +244,11 @@ const toInputRef = useRef(null);
     startIndex,
     startIndex + PAGE_SIZE
   );
+
   if (loading) {
     return <Loader />;
   }
+
   return (
     <div className="page campaigns-page">
       <section className="page-header">
@@ -335,61 +357,58 @@ const toInputRef = useRef(null);
             ))}
           </select>
 
-{/* Date range */}
-<button
-  type="button"
-  className="filter-pill date-filter"
-  onClick={() => {
-    if (fromInputRef.current) {
-      if (fromInputRef.current.showPicker) {
-        fromInputRef.current.showPicker();       // Chrome, Edge, Opera
-      } else {
-        fromInputRef.current.focus();            // fallback – მაინც focus
-        fromInputRef.current.click?.();
-      }
-    }
-  }}
->
-  <span className="date-filter-label">From</span>
-  <input
-    ref={fromInputRef}
-    id="date-from"
-    type="date"
-    value={filterDateFrom}
-    onChange={handleDateFromChange}
-    className="date-filter-input"
-    onClick={(e) => e.stopPropagation()} // რომ input-ზე კლიკმა button-ს onclick არ გაუშვას უკვე
-  />
-</button>
+          {/* Date range */}
+          <button
+            type="button"
+            className="filter-pill date-filter"
+            onClick={() => {
+              if (fromInputRef.current) {
+                if (fromInputRef.current.showPicker) {
+                  fromInputRef.current.showPicker();       // Chrome, Edge, Opera
+                } else {
+                  fromInputRef.current.focus();            // fallback – მაინც focus
+                  fromInputRef.current.click?.();
+                }
+              }
+            }}
+          >
+            <span className="date-filter-label">From</span>
+            <input
+              ref={fromInputRef}
+              id="date-from"
+              type="date"
+              value={filterDateFrom}
+              onChange={handleDateFromChange}
+              className="date-filter-input"
+              onClick={(e) => e.stopPropagation()} // რომ input-ზე კლიკმა button-ს onclick არ გაუშვას უკვე
+            />
+          </button>
 
-<button
-  type="button"
-  className="filter-pill date-filter"
-  onClick={() => {
-    if (toInputRef.current) {
-      if (toInputRef.current.showPicker) {
-        toInputRef.current.showPicker();
-      } else {
-        toInputRef.current.focus();
-        toInputRef.current.click?.();
-      }
-    }
-  }}
->
-  <span className="date-filter-label">To</span>
-  <input
-    ref={toInputRef}
-    id="date-to"
-    type="date"
-    value={filterDateTo}
-    onChange={handleDateToChange}
-    className="date-filter-input"
-    onClick={(e) => e.stopPropagation()}
-  />
-</button>
-
-
-
+          <button
+            type="button"
+            className="filter-pill date-filter"
+            onClick={() => {
+              if (toInputRef.current) {
+                if (toInputRef.current.showPicker) {
+                  toInputRef.current.showPicker();
+                } else {
+                  toInputRef.current.focus();
+                  toInputRef.current.click?.();
+                }
+              }
+            }}
+          >
+            <span className="date-filter-label">To</span>
+            <input
+              ref={toInputRef}
+              id="date-to"
+              type="date"
+              value={filterDateTo}
+              onChange={handleDateToChange}
+              className="date-filter-input"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </button>
         </div>
       </section>
 
@@ -404,7 +423,10 @@ const toInputRef = useRef(null);
             <CampaignCard
               key={c.id}
               campaign={c}
-              onClick={() => setSelected(c)}
+              onClick={() => {
+                setSelected(c);
+                navigate(`/campaigns/${c.id}`);
+              }}
             />
           ))}
         </div>
@@ -454,11 +476,13 @@ const toInputRef = useRef(null);
       <CampaignModal
         campaign={selected}
         isOpen={!!selected}
-        onClose={() => setSelected(null)}
+        onClose={() => {
+          setSelected(null);
+          navigate('/campaigns');
+        }}
         isAdmin={isAdmin}
         onDelete={handleDeleteCampaign}
       />
-
     </div>
   );
 }
