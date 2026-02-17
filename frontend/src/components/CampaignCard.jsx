@@ -5,13 +5,28 @@ import 'flag-icons/css/flag-icons.min.css';
 
 function CampaignCard({ campaign, onClick }) {
   const countryOptions = useMemo(() => countryList().getData(), []);
-  const countryMeta =
-    campaign.country &&
-    countryOptions.find((c) => c.value === campaign.country) || null;
-
-  const formattedDate = campaign.date
-    ? new Date(campaign.date).toLocaleDateString()
+const countryMeta =
+  campaign.country
+    ? countryOptions.find((c) => c.value === campaign.country)
     : null;
+
+const format = (d) => (d ? new Date(d).toLocaleDateString() : '');
+const truncateWords = (text, maxWords) => {
+  const t = (text || '').trim();
+  if (!t) return '';
+  const words = t.split(/\s+/);
+  if (words.length <= maxWords) return t;
+  return words.slice(0, maxWords).join(' ') + '...';
+};
+
+const dateLabel = campaign.startDate
+  ? campaign.isOngoing
+? `${format(campaign.startDate)}`
+    : campaign.endDate
+      ? `${format(campaign.startDate)} — ${format(campaign.endDate)}`
+      : format(campaign.startDate)
+  : null;
+
 
   return (
     <div
@@ -23,32 +38,46 @@ function CampaignCard({ campaign, onClick }) {
         if (e.key === 'Enter' || e.key === ' ') onClick?.();
       }}
     >
-      {campaign.imageUrl && (
-        <div className="campaign-image-wrapper">
-          <img
-            src={campaign.imageUrl}
-            alt={campaign.title}
-            className="campaign-image"
-          />
-        </div>
-      )}
+<div className="campaign-image-wrapper">
+  {campaign.imageUrl ? (
+    <img
+      src={campaign.imageUrl}
+      alt={campaign.title}
+      className="campaign-image"
+    />
+  ) : null}
+</div>
+
 
       <div className="campaign-card-body">
-        <h3>{campaign.title}</h3>
+<h3 title={campaign.title}>{truncateWords(campaign.title, 8)}</h3>
 
-        <p className="campaign-description">{campaign.description}</p>
+<p className="campaign-description" title={campaign.description}>
+  {truncateWords(campaign.description, 15)}
+</p>
 
         {/* Topic / Sub-topic tags */}
-        <div className="campaign-tags">
-          {campaign.topic && <span className="tag">{campaign.topic}</span>}
-          {campaign.subtopic && <span className="tag">{campaign.subtopic}</span>}
-        </div>
+<div className="campaign-tags">
+  {(Array.isArray(campaign.topics) ? campaign.topics : []).slice(0, 3).map((t) => (
+    <span key={`t-${t}`} className="tag">{t}</span>
+  ))}
+
+  {(Array.isArray(campaign.subtopics) ? campaign.subtopics : []).slice(0, 2).map((s) => (
+    <span key={`s-${s}`} className="tag tag-muted">{s}</span>
+  ))}
+
+  {((Array.isArray(campaign.topics) ? campaign.topics.length : 0) > 3) && (
+    <span className="tag tag-more">+{campaign.topics.length - 3}</span>
+  )}
+</div>
+
 
         {/* Country + Date row */}
         <div
           className="campaign-card-meta"
           style={{
-            marginTop: '0.6rem',
+            marginTop: 'auto',
+
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -70,11 +99,18 @@ function CampaignCard({ campaign, onClick }) {
             </div>
           )}
 
-          {formattedDate && (
-            <span className="campaign-card-date">
-              {formattedDate}
-            </span>
-          )}
+{campaign.startDate && (
+  <span className={`campaign-card-date ${campaign.isOngoing ? 'ongoing' : ''}`}>
+    {format(campaign.startDate)}
+    {campaign.isOngoing ? (
+      <span className="ongoing-pill">Ongoing</span>
+    ) : campaign.endDate ? (
+      <> — {format(campaign.endDate)}</>
+    ) : null}
+  </span>
+)}
+
+
         </div>
       </div>
     </div>

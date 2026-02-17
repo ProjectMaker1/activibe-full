@@ -114,7 +114,10 @@ function ChatBotPage() {
 
   const [currentMessage, setCurrentMessage] = useState('');
 const [isSending, setIsSending] = useState(false);
-  // answers
+const [welcomeTimeoutId, setWelcomeTimeoutId] = useState(null);
+  
+// answers
+
   const [selectedTopicId, setSelectedTopicId] = useState(null);
   const [selectedToolId, setSelectedToolId] = useState('');
   const [selectedSubToolName, setSelectedSubToolName] = useState('');
@@ -158,6 +161,13 @@ const [isSending, setIsSending] = useState(false);
       cancelled = true;
     };
   }, []);
+
+  
+useEffect(() => {
+  return () => {
+    if (welcomeTimeoutId) clearTimeout(welcomeTimeoutId);
+  };
+}, [welcomeTimeoutId]);
 
   /* ---------- ჩატების ჩატვირთვა (auth = DB, guest = localStorage) ---------- */
   useEffect(() => {
@@ -256,12 +266,56 @@ if (!cancelled) {
         );
 
         if (!res || !res.session) return;
+const chat = normalizeChat(res.session);
 
-        const chat = normalizeChat(res.session);
+// თუ withWelcome -> ჯერ typing ჩავამატოთ, მერე 1.2 წამში welcome ტექსტი
+if (withWelcome && mentorName && topicName) {
+  const typingMsg = {
+    id: `t-${chat.id}`,
+    from: 'bot',
+    text: '',
+    ts: new Date().toISOString(),
+    _typing: true,
+  };
 
-        setChats((prev) => [...prev, chat]);
-        setActiveChatId(chat.id);
-        setCurrentMessage('');
+  setChats((prev) => [...prev, { ...chat, messages: [...(chat.messages || []), typingMsg] }]);
+  setActiveChatId(chat.id);
+  setCurrentMessage('');
+if (welcomeTimeoutId) clearTimeout(welcomeTimeoutId);
+
+const t = setTimeout(() => {
+  setChats((prev) =>
+    prev.map((c) => {
+      if (c.id !== chat.id) return c;
+
+      const cleaned = (c.messages || []).filter((m) => !m._typing);
+      return {
+        ...c,
+        messages: [
+          ...cleaned,
+          {
+            id: `w-${chat.id}`,
+            from: 'bot',
+            text: `Hi — I’m ${mentorName} (virtual mentor). I’ll help you explore ${topicName.toLowerCase()} through safe, non-violent action. What are you trying to change or protect?`,
+            ts: new Date().toISOString(),
+          },
+        ],
+      };
+    })
+  );
+}, 1200);
+
+setWelcomeTimeoutId(t);
+
+
+  return; // ✅ აქ ძალიან მნიშვნელოვანია რომ ქვემოთ აღარ წავიდეს
+}
+
+// default (no welcome)
+setChats((prev) => [...prev, chat]);
+setActiveChatId(chat.id);
+setCurrentMessage('');
+
       } catch (err) {
         console.error('Failed to start new chat', err);
       }
@@ -283,14 +337,45 @@ if (!cancelled) {
       messages: [],
     };
 
-    if (withWelcome && mentorName && topicName) {
-      chat.messages.push({
-        id: id + 1,
-        from: 'bot',
-        text: `Hello! I’m ${mentorName} (virtual mentor). Let’s explore ${topicName.toLowerCase()} together.`,
-        ts: createdAt,
+if (withWelcome && mentorName && topicName) {
+  // ჯერ typing
+  chat.messages.push({
+    id: `t-${id}`,
+    from: 'bot',
+    text: '',
+    ts: createdAt,
+    _typing: true,
+  });
+if (welcomeTimeoutId) clearTimeout(welcomeTimeoutId);
+
+  // მერე 1.2 წამში რეალური welcome მესიჯი
+  const t = setTimeout(() => {
+    setChats((prev) => {
+      const updated = prev.map((c) => {
+        if (c.id !== id) return c;
+
+        const cleaned = (c.messages || []).filter((m) => !m._typing);
+        return {
+          ...c,
+          messages: [
+            ...cleaned,
+            {
+              id: `w-${id}`,
+              from: 'bot',
+              text: `Hello! I’m ${mentorName} (virtual mentor). Let’s explore ${topicName.toLowerCase()} together.`,
+              ts: new Date().toISOString(),
+            },
+          ],
+        };
       });
-    }
+
+      saveGuestChats(updated);
+      return updated;
+    });
+  }, 1200);
+  setWelcomeTimeoutId(t);
+}
+
 
     setChats((prev) => {
       const updated = [...prev, chat];
@@ -300,6 +385,38 @@ if (!cancelled) {
     setActiveChatId(id);
     setCurrentMessage('');
   };
+// ✅ ჩატის წაშლა (auth → backend, guest → localStorage)
+const handleDeleteChat = async (chatId) => {
+  const ok = window.confirm('Are you sure you want to delete this conversation?');
+  if (!ok) return;
+
+  const hasToken = !!tokens?.accessToken;
+
+  // 🔹 auth user → backend delete
+  if (hasToken) {
+    try {
+      await apiRequest(
+        `/chat/sessions/${chatId}`,
+        withAuth(tokens.accessToken, { method: 'DELETE' })
+      );
+    } catch (err) {
+      console.error('Failed to delete chat', err);
+      return;
+    }
+  }
+
+  // 🔹 guest + UI update (და auth-ის შემდეგაც UI-ში წავშალოთ)
+  setChats((prev) => {
+    const updated = prev.filter((c) => c.id !== chatId);
+
+    // activeChat თუ წაიშალა → სხვა ჩატზე გადაყვანა ან null
+    const nextActive = updated.length ? updated[0].id : null;
+    if (activeChatId === chatId) setActiveChatId(nextActive);
+
+    if (!hasToken) saveGuestChats(updated);
+    return updated;
+  });
+};
 
  
   const handleSendMessage = async (e) => {
@@ -387,48 +504,7 @@ if (!cancelled) {
       }
       return;
     }
-// ✅ ჩატის წაშლა (auth → backend, guest → localStorage)
-const handleDeleteChat = async (chatId) => {
-  const chatToDelete = chats.find((c) => c.id === chatId);
-  if (!chatToDelete) return;
 
-  const ok = window.confirm('Are you sure you want to delete this conversation?');
-  if (!ok) return;
-
-  const hasToken = !!tokens?.accessToken;
-
-  // 🔹 auth user → backend delete
-  if (hasToken) {
-    try {
-      await apiRequest(
-        `/chat/sessions/${chatId}`,
-        withAuth(tokens.accessToken, { method: 'DELETE' })
-      );
-
-      setChats((prev) => {
-        const updated = prev.filter((c) => c.id !== chatId);
-        if (activeChatId === chatId) {
-          setActiveChatId(updated.length ? updated[0].id : null);
-        }
-        return updated;
-      });
-      return;
-    } catch (err) {
-      console.error('Failed to delete chat', err);
-      return;
-    }
-  }
-
-  // 🔹 guest → state + localStorage
-  setChats((prev) => {
-    const updated = prev.filter((c) => c.id !== chatId);
-    if (activeChatId === chatId) {
-      setActiveChatId(updated.length ? updated[0].id : null);
-    }
-    saveGuestChats(updated);
-    return updated;
-  });
-};
 // ✅ guest → backend guest-reply endpoint
 const res = await apiRequest('/chat/guest/reply', {
   method: 'POST',
@@ -851,24 +927,14 @@ className={`chatbot-chat-message ${
 <div className="direct-ai-container">
   <span className="direct-ai-text">Direct to</span>
 
-  <button
-    className="loader-wrapper ai-bubble-small"
-    onClick={handleDirectToAI}
-  >
-    <span className="loader-letter">A</span>
-    <span className="loader-letter">I</span>
-    <span className="loader-letter"> </span>
-    <span className="loader-letter">A</span>
-    <span className="loader-letter">s</span>
-    <span className="loader-letter">s</span>
-    <span className="loader-letter">i</span>
-    <span className="loader-letter">s</span>
-    <span className="loader-letter">t</span>
-    <span className="loader-letter">a</span>
-    <span className="loader-letter">n</span>
-    <span className="loader-letter">t</span>
-    <div className="loader"></div>
-  </button>
+<button
+  className="loader-wrapper ai-bubble-small"
+  onClick={handleDirectToAI}
+>
+  <span className="loader-text">AI Assistant</span>
+  <div className="loader"></div>
+</button>
+
 </div>
 
 

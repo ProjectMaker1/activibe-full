@@ -71,10 +71,11 @@ button {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: var(--bg);
 }
 /* 🌞 LIGHT THEME – აქ არის უკვე არსებული ფერები */
 .app-root.theme-light {
-  --bg: #fff3d3;
+  --bg: #fefaf9;
   --text-main: #111827;
   --text-muted: #6b7280;
   --primary: #0c7b61;
@@ -1028,22 +1029,64 @@ button {
   }
 }
 
-.campaign-image-wrapper {
-  border-radius: 14px;
-  margin-bottom: 0.75rem;
-  /* მოვაშორეთ overflow და max-height, რომ არაფერი მოიჭრას
-     თუ გინდა სიმაღლის ლიმიტი, ქვემოთ ავხსნი როგორ. */
+/* ===== Campaign cards: GOLDEN STANDARD ===== */
+
+/* grid items same height */
+.campaigns-grid {
+  align-items: stretch;
+}
+
+/* card same height + clean layout */
+.campaign-card {
+  height: 100%;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f3f4f6; /* სურვილისამებრ – ცარიელი ზონის ფონი */
+  flex-direction: column;
+}
+
+/* fixed, equal image area */
+.campaign-image-wrapper {
+  width: 100%;
+  aspect-ratio: 4 / 3;     /* თუ გინდა უფრო ფართო: 16 / 9 */
+  overflow: hidden;
+  border-radius: 14px;
+  background: #f3f4f6;
+  margin-bottom: 0.75rem;
 }
 
 .campaign-image {
   width: 100%;
-  height: auto;
-  object-fit: contain; /* cover → contain, чтобы სრულად ჩანდეს */
+  height: 100%;
+  object-fit: cover;       /* მთავარი: ყველა ფოტო ერთნაირად “ჯდება” */
   display: block;
+}
+
+/* body takes remaining space */
+.campaign-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* title clamp (max 2 lines + …) */
+.campaign-card-body h3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* description clamp (max 2 lines + …) */
+.campaign-description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;   /* 2 ხაზზე დაასრულოს */
+  overflow: hidden;
+}
+
+/* push meta row to bottom (needs step #2 JSX change) */
+.campaign-card-meta {
+  margin-top: auto;
 }
 
 
@@ -1717,50 +1760,127 @@ button {
   flex-direction: column;
 }
 
-/* HERO ზედა ნაწილი – სათაური + ქვედა რიგი */
-/* .home-hero-image {
-  padding-top: 3rem;
-  padding-bottom: 2.5rem;
-} */
-
-/* სათაური + მოკლე ტექსტი ცენტრში */
-.hero-inner {
-  max-width: 720px;
-  margin: 0 auto;
-  text-align: center;
+/* ტექსტი/კონტენტი ზემოთ */
+.home-page > * {
+  position: relative;
+  z-index: 1;
+}
+.home-page {              /* ან ის კლასი, სადაც გინდა ფონად */
+  position: relative;
 }
 
-.hero-inner h1 {
-  margin: 0;
-  font-size: 2.4rem;
+
+/* ტექსტი/კონტენტი ზემოთ */
+.home-page > * {
+  position: relative;
+  z-index: 1;
+}
+/* =========================
+   HOME HERO (FINAL FIX)
+   ========================= */
+
+.home-hero-image{
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  min-height: 520px;
+  padding: 2.5rem 2.5rem;
+  background: transparent;
 }
 
-.hero-inner p {
-  margin-top: 0.75rem;
-  font-size: 1.1rem;
-  opacity: 0.9;
-}
-
-/* ქვედა რიგი: მარცხნივ ფოტო, მარჯვნივ AI ბუბლი */
-.hero-bottom-row {
-  margin-top: 2.5rem;
+/* ტექსტი ზუსტად ცენტრში */
+.home-hero-image .hero-inner{
+  position: absolute;
+  inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 2rem;
+  justify-content: flex-start;   /* ⬅️ ცენტრიდან ზემოთ */
+  text-align: center;
+  padding: 2.2rem;
+  padding-top: 3.4rem;           /* ⬅️ ნავბარის ქვემოთ ჩამოჯდეს */
+  z-index: 3;
+  pointer-events: none;
 }
 
-/* hero ფოტო – მარცხნივ */
-.hero-illustration {
-  width: 75%;
-  max-width: 750px;
-  height: auto;
-  display: flex;
-  margin-top: -30%;
- 
-  
 
+.home-hero-image .hero-inner h1{
+  margin: 0;
 }
+
+.home-hero-image .hero-inner p{
+  margin: 0.8rem 0 0;
+  max-width: 720px;
+}
+
+/* ქვედა რიგი: მარცხნივ ფოტო (არ იჭრება), მარჯვნივ AI */
+.home-hero-image .hero-bottom-row{
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 1.25rem;
+  height: 100%;
+}
+
+/* ფოტო: სრულად ჩანდეს, არ მოიჭრას */
+.home-hero-image .hero-illustration{
+  width: 100%;
+  height: 880px;                 /* ⬅️ აქ გაიზარდა */
+  object-fit: contain;           /* არ მოიჭრება */
+  object-position: left bottom;  /* მარცხნივ იგივე პოზიცია */
+  display: block;
+  pointer-events: none;
+}
+
+
+/* AI ბურთი მარჯვნივ (არ იყოს auto ცენტრი) */
+.home-hero-image .loader-wrapper{
+  margin: 0 !important;
+  justify-self: end;
+  align-self: center;      /* ⬅️ ბოლოდან ცენტრში */
+  z-index: 4;
+
+  transform: translateY(-60px);  /* ⬅️ რამდენითაც გინდა მაღლა */
+}
+
+
+/* ---------- Responsive ---------- */
+@media (max-width: 900px){
+  .home-hero-image{
+    min-height: 560px;
+    padding: 2rem 1.5rem;
+  }
+
+  .home-hero-image .hero-bottom-row{
+    grid-template-columns: 1fr;
+    justify-items: center;
+    align-items: center;
+    gap: 1.25rem;
+  }
+
+  .home-hero-image .hero-illustration{
+    height: 260px;
+    object-position: center;
+  }
+
+  .home-hero-image .loader-wrapper{
+    justify-self: center;
+  }
+}
+
+@media (max-width: 480px){
+  .home-hero-image{
+    min-height: 540px;
+    padding: 1.6rem 1.1rem;
+  }
+
+  .home-hero-image .hero-illustration{
+    height: 220px;
+  }
+}
+
 
 /* loader ბურთი მარჯვნივ, margin:auto არ გვინდა */
 .hero-bottom-row .loader-wrapper {
@@ -3362,4 +3482,26 @@ button {
 .app-root.theme-dark .categories-page h1,
 .app-root.theme-dark .categories-page h2 {
   color: #ffffff;
+}
+/* Modal: media credit */
+.campaign-modal-credit-list{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.campaign-modal-credit-link{
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+}
+
+.campaign-modal-credit-link:hover{
+  background: rgba(59, 130, 246, 0.18);
 }

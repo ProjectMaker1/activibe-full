@@ -193,20 +193,24 @@ export async function deleteUser(req, res, next) {
 export async function getCategories(req, res, next) {
   try {
     const topics = await prisma.topic.findMany({
-      orderBy: { name: 'asc' },
+      orderBy: { order: 'asc' }
+,
       include: {
         subtopics: {
-          orderBy: { name: 'asc' },
+          orderBy: { order: 'asc' }
+,
         },
       },
     });
 
     const tools = await prisma.tool.findMany({
       where: { isActive: true },
-      orderBy: { name: 'asc' },
+      orderBy: { order: 'asc' }
+,
       include: {
         subTools: {
-          orderBy: { name: 'asc' },
+          orderBy: { order: 'asc' }
+,
         },
       },
     });
@@ -313,10 +317,12 @@ export async function getTools(req, res, next) {
   try {
     const tools = await prisma.tool.findMany({
       where: { isActive: true },
-      orderBy: { name: 'asc' },
+      orderBy: { order: 'asc' }
+,
       include: {
         subTools: {
-          orderBy: { name: 'asc' },
+          orderBy: { order: 'asc' }
+,
         },
       },
     });
@@ -392,6 +398,80 @@ export async function createSubTool(req, res, next) {
         message: 'Sub-tool with this name already exists for this tool',
       });
     }
+    next(err);
+  }
+}
+export async function reorderTopics(req, res, next) {
+  try {
+    const { ids } = req.body;
+
+    await prisma.$transaction(
+      ids.map((id, index) =>
+        prisma.topic.update({
+          where: { id },
+          data: { order: index },
+        })
+      )
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+}
+export async function reorderTools(req, res, next) {
+  try {
+    const { ids } = req.body;
+
+    await prisma.$transaction(
+      ids.map((id, index) =>
+        prisma.tool.update({
+          where: { id },
+          data: { order: index },
+        })
+      )
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function reorderSubtopics(req, res, next) {
+  try {
+    const { ids } = req.body;
+
+    await prisma.$transaction(
+      ids.map((id, index) =>
+        prisma.subTopic.update({
+          where: { id },
+          data: { order: index },
+        })
+      )
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function reorderSubTools(req, res, next) {
+  try {
+    const { ids } = req.body;
+
+    await prisma.$transaction(
+      ids.map((id, index) =>
+        prisma.subTool.update({
+          where: { id },
+          data: { order: index },
+        })
+      )
+    );
+
+    res.json({ success: true });
+  } catch (err) {
     next(err);
   }
 }

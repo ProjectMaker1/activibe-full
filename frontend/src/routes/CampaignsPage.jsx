@@ -52,12 +52,14 @@ function CampaignsPage() {
   }, []);
 
   // load topics/tools for filters
-  useEffect(() => {
-    apiRequest('/categories')
-      .then((res) => {
-        setTopics(res.topics || []);
-        setTools(res.tools || []);
-      })
+useEffect(() => {
+  apiRequest('/categories')
+    .then((res) => {
+      // პირდაპირ backend order-ს ვიყენებთ
+      setTopics(res.topics ?? []);
+      setTools(res.tools ?? []);
+    })
+
       .catch((err) => {
         console.error('Failed to load categories', err);
       });

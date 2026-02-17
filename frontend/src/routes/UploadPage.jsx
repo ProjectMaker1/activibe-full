@@ -14,19 +14,18 @@ function UploadPage() {
   const [title, setTitle] = useState('');
 
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState('');
+const [startDate, setStartDate] = useState('');
+const [endDate, setEndDate] = useState('');
+const [isOngoing, setIsOngoing] = useState(false);
   const [country, setCountry] = useState(null); // { label, value }
-  const [topic, setTopic] = useState('');
-  const [subtopic, setSubtopic] = useState('');
+const [topics, setTopics] = useState([]);
+const [subtopics, setSubtopics] = useState([]);
+const [tools, setTools] = useState([]);
+const [subTools, setSubTools] = useState([]);
 
-  // TOOLS
-  const [tools, setTools] = useState(''); // არჩეული მთავარი tool-ის სახელი
-  const [subTool, setSubTool] = useState(''); // არჩეული sub-tool-ის სახელი
-  const [availableSubTools, setAvailableSubTools] = useState([]); // არჩეული tool-ის sub-tools
 
   // dropdown data
   const [availableTopics, setAvailableTopics] = useState([]);
-  const [availableSubtopics, setAvailableSubtopics] = useState([]);
   const [availableTools, setAvailableTools] = useState([]);
 
   const [status, setStatus] = useState(null);
@@ -37,62 +36,62 @@ function UploadPage() {
 
   // ბევრი ფაილი: [{ file: File, preview: string }]
   const [files, setFiles] = useState([]);
+// ✅ NEW: media source (default OWN)
+const [mediaSourceType, setMediaSourceType] = useState('OWN'); // 'OWN' | 'EXTERNAL'
+const [mediaSourceUrl, setMediaSourceUrl] = useState('');
 
 
 
   // load topics + tools for dropdowns
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const res = await apiRequest('/categories');
-        setAvailableTopics(res.topics || []);
-        setAvailableTools(res.tools || []);
-      } catch (err) {
-        console.error('Failed to load categories', err);
-      }
-    };
-
-    loadCategories();
-  }, []);
-const openCalendar = (e) => {
-  e.stopPropagation();
-  const el = document.getElementById('upload-date-input');
-  if (!el) return;
-
-  // თუ ბრაუზერი მხარს უჭერს showPicker-ს
-  if (typeof el.showPicker === 'function') {
-    el.showPicker();
-  } else {
-    el.focus(); // fallback
-  }
-};
-
-
-  const handleTopicChange = (e) => {
-    const topicId = Number(e.target.value);
-    const topicObj = availableTopics.find((t) => t.id === topicId) || null;
-
-    setTopic(topicObj ? topicObj.name : '');
-    setSubtopic('');
-    setAvailableSubtopics(topicObj ? topicObj.subtopics || [] : []);
+useEffect(() => {
+  const loadCategories = async () => {
+    try {
+      const res = await apiRequest('/categories');
+      setAvailableTopics(res.topics ?? []);
+      setAvailableTools(res.tools ?? []);
+    } catch (err) {
+      console.error('Failed to load categories', err);
+    }
   };
 
-  const handleSubtopicChange = (e) => {
-    setSubtopic(e.target.value);
-  };
+  loadCategories();
+}, []);
+const topicOptions = useMemo(
+  () => (availableTopics ?? []).map(t => ({ value: t.name, label: t.name })),
+  [availableTopics]
+);
 
-  const handleToolChange = (e) => {
-    const toolId = Number(e.target.value);
-    const toolObj = availableTools.find((t) => t.id === toolId) || null;
+const toolOptions = useMemo(
+  () => (availableTools ?? []).map(t => ({ value: t.name, label: t.name })),
+  [availableTools]
+);
 
-    setTools(toolObj ? toolObj.name : '');
-    setSubTool(''); // როცა მთავარი tool იცვლება, sub-tool გავასუფთავოთ
-    setAvailableSubTools(toolObj ? toolObj.subTools || [] : []);
-  };
+const subtopicOptions = useMemo(() => {
+  const map = new Map();
 
-  const handleSubToolChange = (e) => {
-    setSubTool(e.target.value);
-  };
+  topics.forEach(sel => {
+    const topicObj = availableTopics.find(t => t.name === sel.value);
+    (topicObj?.subtopics || []).forEach(st => {
+      map.set(st.name, { value: st.name, label: st.name });
+    });
+  });
+
+  return Array.from(map.values());
+}, [topics, availableTopics]);
+
+const subToolOptions = useMemo(() => {
+  const map = new Map();
+
+  tools.forEach(sel => {
+    const toolObj = availableTools.find(t => t.name === sel.value);
+    (toolObj?.subTools || []).forEach(st => {
+      map.set(st.name, { value: st.name, label: st.name });
+    });
+  });
+
+  return Array.from(map.values());
+}, [tools, availableTools]);
+
 
   const handleFileChange = (e) => {
     const list = Array.from(e.target.files || []);
@@ -163,6 +162,21 @@ const openCalendar = (e) => {
       });
       return;
     }
+    // ✅ NEW: source validation (only if EXTERNAL)
+if (mediaSourceType === 'EXTERNAL' && !mediaSourceUrl.trim()) {
+  setStatus({ type: 'error', message: 'Please add a source link for external media.' });
+  return;
+}
+
+if (!startDate) {
+  setStatus({ type: 'error', message: 'Start date is required.' });
+  return;
+}
+
+if (!isOngoing && endDate && new Date(endDate) < new Date(startDate)) {
+  setStatus({ type: 'error', message: 'End date cannot be before start date.' });
+  return;
+}
 
     setSubmitting(true);
     setStatus(null);
@@ -172,6 +186,9 @@ const openCalendar = (e) => {
       let imageUrl = null;
       let videoUrl = null;
       const mediaPayload = []; // ყველა media ჩანაწერი
+  // ✅ freeze (snapshot) source data for this upload
+  const sourceTypeSnapshot = mediaSourceType;
+  const sourceUrlSnapshot = mediaSourceUrl.trim();
 
       const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
       const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -220,10 +237,24 @@ for (let index = 0; index < files.length; index++) {
 
   if (uploadData.resource_type === 'video') {
     if (!videoUrl) videoUrl = url;
-    mediaPayload.push({ url, kind: 'VIDEO', order: index });
+mediaPayload.push({
+  url,
+  kind: 'VIDEO',
+  order: index,
+  sourceType: sourceTypeSnapshot,
+  sourceUrl: sourceTypeSnapshot === 'EXTERNAL' ? sourceUrlSnapshot : null,
+});
+
   } else {
     if (!imageUrl) imageUrl = url;
-    mediaPayload.push({ url, kind: 'IMAGE', order: index });
+mediaPayload.push({
+  url,
+  kind: 'IMAGE',
+  order: index,
+  sourceType: sourceTypeSnapshot,
+  sourceUrl: sourceTypeSnapshot === 'EXTERNAL' ? sourceUrlSnapshot : null,
+});
+
   }
 }
 
@@ -234,19 +265,25 @@ for (let index = 0; index < files.length; index++) {
         '/campaigns',
         withAuth(tokens.accessToken, {
           method: 'POST',
-          body: {
-            title: title.trim() || 'Untitled Action',
-            description,
-            date: date || new Date().toISOString(),
-            country: country?.value || null,
-            topic,
-            subtopic,
-            tools, // ✅ მთავარ tool-ს ვინახავთ
-            subTool, // ✅ sub-tool ცალკე გადაიცემა
-            imageUrl,
-            videoUrl,
-            media: mediaPayload,
-          },
+body: {
+  title: title.trim() || 'Untitled Action',
+  description,
+startDate,
+endDate: isOngoing ? null : (endDate || null),
+isOngoing,
+
+  country: country?.value || null,
+
+  topics: topics.map(t => t.value),
+  subtopics: subtopics.map(s => s.value),
+  tools: tools.map(t => t.value),
+  subTools: subTools.map(s => s.value),
+
+  imageUrl,
+  videoUrl,
+  media: mediaPayload,
+}
+
         })
       );
 
@@ -265,14 +302,18 @@ for (let index = 0; index < files.length; index++) {
       setFiles([]);
       setTitle('');
       setDescription('');
-      setDate('');
+setStartDate('');
+setEndDate('');
+setIsOngoing(false);
+setMediaSourceType('OWN');
+setMediaSourceUrl('');
+
       setCountry(null);
-      setTopic('');
-      setSubtopic('');
-      setTools('');
-      setSubTool('');
-      setAvailableSubTools([]);
-      setAvailableSubtopics([]);
+setTopics([]);
+setSubtopics([]);
+setTools([]);
+setSubTools([]);
+
       setUploadProgress(0);
     } catch (err) {
       console.error(err);
@@ -366,30 +407,70 @@ for (let index = 0; index < files.length; index++) {
             onChange={(e) => setDescription(e.target.value)}
           />
         </label>
+        {/* ✅ Media Source (optional) */}
+<div className="form-row">
+  <label className="field">
+    <span>Media source</span>
+    <select
+      value={mediaSourceType}
+      onChange={(e) => {
+        const v = e.target.value;
+        setMediaSourceType(v);
+        if (v === 'OWN') setMediaSourceUrl('');
+      }}
+    >
+      <option value="OWN">Own (I created it)</option>
+      <option value="EXTERNAL">External (credit source)</option>
+    </select>
+  </label>
 
-
-<label className="field">
-  <span>Date</span>
-
-<div
-  className={`date-click-wrapper ${date ? 'has-value' : ''}`}
-  onClick={openCalendar}
->
-  {!date && (
-    <span className="date-placeholder">dd/mm/yyyy</span>
-  )}
-
-  <input
-    id="upload-date-input"
-    type="date"
-    value={date}
-    onChange={(e) => setDate(e.target.value)}
-    className="date-input"
-  />
-
-  <span className="calendar-icon">📅</span>
+  <label className="field">
+    <span>Source link {mediaSourceType === 'EXTERNAL' ? '' : '(optional)'}</span>
+    <input
+      type="url"
+      placeholder="https://..."
+      value={mediaSourceUrl}
+      onChange={(e) => setMediaSourceUrl(e.target.value)}
+      disabled={mediaSourceType !== 'EXTERNAL'}
+    />
+  </label>
 </div>
 
+
+<div className="form-row">
+  <label className="field">
+    <span>Start date</span>
+    <input
+      type="date"
+      value={startDate}
+      onChange={(e) => setStartDate(e.target.value)}
+    />
+  </label>
+
+  <label className="field">
+    <span>End date</span>
+    <input
+      type="date"
+      value={endDate}
+      onChange={(e) => setEndDate(e.target.value)}
+      disabled={isOngoing}
+    />
+  </label>
+</div>
+
+<label className="field" style={{ marginTop: 8 }}>
+  <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+    <input
+      type="checkbox"
+      checked={isOngoing}
+      onChange={(e) => {
+        const checked = e.target.checked;
+        setIsOngoing(checked);
+        if (checked) setEndDate('');
+      }}
+    />
+    Ongoing
+  </span>
 </label>
 
 
@@ -414,80 +495,87 @@ for (let index = 0; index < files.length; index++) {
             />
           </label>
 
-          <label className="field">
-            <span>Topic</span>
-            <select
-              value={availableTopics.find((t) => t.name === topic)?.id || ''}
-              onChange={handleTopicChange}
-            >
-              <option value="">Select a topic</option>
-              {availableTopics.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </label>
+<label className="field">
+  <span>Topics</span>
+  <Select
+    isMulti
+    options={topicOptions}
+    value={topics}
+    onChange={(vals) => {
+      const next = vals || [];
+      setTopics(next);
+
+      // topic-ების შეცვლისას subtopics გავასუფთავოთ/გავფილტროთ
+      const allowed = new Set(
+        next.flatMap(sel => {
+          const tObj = availableTopics.find(t => t.name === sel.value);
+          return (tObj?.subtopics || []).map(st => st.name);
+        })
+      );
+      setSubtopics(prev => prev.filter(st => allowed.has(st.value)));
+    }}
+    placeholder="Select topics..."
+    classNamePrefix="react-select"
+  />
+</label>
+
         </div>
 
         <div className="form-row">
-          <label className="field">
-            <span>Sub-topic</span>
-            <select
-              value={subtopic}
-              onChange={handleSubtopicChange}
-              disabled={!availableSubtopics.length}
-            >
-              <option value="">
-                {availableSubtopics.length
-                  ? 'Select a sub-topic'
-                  : 'Select a topic first'}
-              </option>
-              {availableSubtopics.map((s) => (
-                <option key={s.id} value={s.name}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </label>
+<label className="field">
+  <span>Sub-topics</span>
+  <Select
+    isMulti
+    options={subtopicOptions}
+    value={subtopics}
+    onChange={(vals) => setSubtopics(vals || [])}
+    isDisabled={!topics.length}
+    placeholder={topics.length ? "Select sub-topics..." : "Select topics first"}
+    classNamePrefix="react-select"
+  />
+</label>
 
-          <label className="field">
-            <span>Tools</span>
-            <select
-              value={availableTools.find((t) => t.name === tools)?.id || ''}
-              onChange={handleToolChange}
-            >
-              <option value="">Select a tool</option>
-              {availableTools.map((tool) => (
-                <option key={tool.id} value={tool.id}>
-                  {tool.name}
-                </option>
-              ))}
-            </select>
-          </label>
+
+<label className="field">
+  <span>Tools</span>
+  <Select
+    isMulti
+    options={toolOptions}
+    value={tools}
+    onChange={(vals) => {
+      const next = vals || [];
+      setTools(next);
+
+      const allowed = new Set(
+        next.flatMap(sel => {
+          const tObj = availableTools.find(t => t.name === sel.value);
+          return (tObj?.subTools || []).map(st => st.name);
+        })
+      );
+      setSubTools(prev => prev.filter(st => allowed.has(st.value)));
+    }}
+    placeholder="Select tools..."
+    classNamePrefix="react-select"
+  />
+</label>
+
         </div>
 
         {/* მეორე row – Sub-tools */}
         <div className="form-row">
-          <label className="field">
-            <span>Sub-tools</span>
-            <select
-              value={subTool}
-              onChange={handleSubToolChange}
-              disabled={!availableSubTools.length}
-            >
-              <option value="">
-                {availableSubTools.length
-                  ? 'Select a sub-tool'
-                  : 'Select a tool first'}
-              </option>
-              {availableSubTools.map((st) => (
-                <option key={st.id} value={st.name}>
-                  {st.name}
-                </option>
-              ))}
-            </select>
-          </label>
+<label className="field">
+  <span>Sub-tools</span>
+  <Select
+    isMulti
+    options={subToolOptions}
+    value={subTools}
+    onChange={(vals) => setSubTools(vals || [])}
+    isDisabled={!tools.length}
+    placeholder={tools.length ? "Select sub-tools..." : "Select tools first"}
+    classNamePrefix="react-select"
+  />
+</label>
+
         </div>
 {submitting && (
   <div className="upload-progress-overlay">

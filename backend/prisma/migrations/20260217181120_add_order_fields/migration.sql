@@ -1,0 +1,11 @@
+-- AlterTable
+ALTER TABLE "SubTool" ADD COLUMN     "order" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "SubTopic" ADD COLUMN     "order" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "Tool" ADD COLUMN     "order" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "Topic" ADD COLUMN     "order" INTEGER NOT NULL DEFAULT 0;

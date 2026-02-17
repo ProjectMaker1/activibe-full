@@ -22,19 +22,16 @@ export async function getAllCampaigns(req, res, next) {
   }
 }
 
-
 // POST /api/campaigns → new campaign
 export async function createNewCampaign(req, res, next) {
   try {
-    // 🎯 საერთოდ აღარ ვედაოთ, უბრალოდ body-ს მთლიანად ვგზავნით
+    // body პირდაპირ გადავცემთ service-ს
     const campaign = await campaignService.createCampaign(req.body, req.user);
-
     res.status(201).json({ campaign });
   } catch (err) {
     next(err);
   }
 }
-
 
 // PATCH /api/admin/campaigns/:id/status
 export async function updateCampaignStatus(req, res, next) {
@@ -59,24 +56,25 @@ export async function deleteCampaign(req, res, next) {
     next(err);
   }
 }
-// GET /api/categories → topics + subtopics + tools (public for upload form)
+
+// GET /api/categories → topics + subtopics + tools
 export async function getPublicCategories(req, res, next) {
   try {
     const topics = await prisma.topic.findMany({
-      orderBy: { name: 'asc' },
+      orderBy: { order: 'asc' },
       include: {
         subtopics: {
-          orderBy: { name: 'asc' },
+          orderBy: { order: 'asc' },
         },
       },
     });
 
     const tools = await prisma.tool.findMany({
       where: { isActive: true },
-      orderBy: { name: 'asc' },
+      orderBy: { order: 'asc' },
       include: {
         subTools: {
-          orderBy: { name: 'asc' },
+          orderBy: { order: 'asc' },
         },
       },
     });

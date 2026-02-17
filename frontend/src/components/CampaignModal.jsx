@@ -36,6 +36,15 @@ function CampaignModal({ campaign, isOpen, onClose, isAdmin = false, onDelete })
       : campaign.videoUrl
       ? [campaign.videoUrl]
       : [];
+  // ✅ NEW: Media source/credit (show only if any media is EXTERNAL)
+  const externalSources = Array.isArray(campaign.media)
+    ? campaign.media
+        .filter((m) => m.sourceType === 'EXTERNAL' && m.sourceUrl)
+        .map((m) => m.sourceUrl.trim())
+    : [];
+
+  // unique list (no duplicates)
+  const uniqueExternalSources = Array.from(new Set(externalSources));
 
   // 👉 ერთიანი სლაიდების მასივი: ჯერ სურათები, მერე ვიდეოები
   const mediaSlides = [
@@ -205,60 +214,98 @@ useEffect(() => {
                 </div>
               )}
 
-              {campaign.topic && (
-                <div className="campaign-modal-details-row">
-                  <span className="campaign-modal-details-label">
-                    TOPIC
-                  </span>
-                  <span className="campaign-modal-details-value">
-                    {campaign.topic}
-                  </span>
-                </div>
-              )}
+{/* TOPICS */}
+{Array.isArray(campaign.topics) && campaign.topics.length > 0 && (
+  <div className="campaign-modal-details-row">
+    <span className="campaign-modal-details-label">TOPICS</span>
+    <span className="campaign-modal-details-value">
+      {campaign.topics.join(', ')}
+    </span>
+  </div>
+)}
 
-              {campaign.subtopic && (
-                <div className="campaign-modal-details-row">
-                  <span className="campaign-modal-details-label">
-                    SUB-TOPIC
-                  </span>
-                  <span className="campaign-modal-details-value">
-                    {campaign.subtopic}
-                  </span>
-                </div>
-              )}
+{/* SUBTOPICS */}
+{Array.isArray(campaign.subtopics) && campaign.subtopics.length > 0 && (
+  <div className="campaign-modal-details-row">
+    <span className="campaign-modal-details-label">SUB-TOPICS</span>
+    <span className="campaign-modal-details-value">
+      {campaign.subtopics.join(', ')}
+    </span>
+  </div>
+)}
 
-              {campaign.tools && (
-                <div className="campaign-modal-details-row">
-                  <span className="campaign-modal-details-label">
-                    TOOLS
-                  </span>
-                  <span className="campaign-modal-details-value">
-                    {campaign.tools}
-                  </span>
-                </div>
-              )}
+{/* TOOLS */}
+{Array.isArray(campaign.tools) && campaign.tools.length > 0 && (
+  <div className="campaign-modal-details-row">
+    <span className="campaign-modal-details-label">TOOLS</span>
+    <span className="campaign-modal-details-value">
+      {campaign.tools.join(', ')}
+    </span>
+  </div>
+)}
 
-              {campaign.subTool && (
-                <div className="campaign-modal-details-row">
-                  <span className="campaign-modal-details-label">
-                    SUB-TOOL
-                  </span>
-                  <span className="campaign-modal-details-value">
-                    {campaign.subTool}
-                  </span>
-                </div>
-              )}
+{/* SUBTOOLS */}
+{Array.isArray(campaign.subTools) && campaign.subTools.length > 0 && (
+  <div className="campaign-modal-details-row">
+    <span className="campaign-modal-details-label">SUB-TOOLS</span>
+    <span className="campaign-modal-details-value">
+      {campaign.subTools.join(', ')}
+    </span>
+  </div>
+)}
 
-              {campaign.date && (
-                <div className="campaign-modal-details-row">
-                  <span className="campaign-modal-details-label">
-                    DATE
-                  </span>
-                  <span className="campaign-modal-details-value">
-                    {new Date(campaign.date).toLocaleDateString()}
-                  </span>
-                </div>
-              )}
+{/* DATE RANGE */}
+{campaign.startDate && (
+  <div className="campaign-modal-details-row">
+    <span className="campaign-modal-details-label">DATE</span>
+    <span className="campaign-modal-details-value">
+      {new Date(campaign.startDate).toLocaleDateString()}
+      {campaign.isOngoing ? (
+        <>
+          {' '}
+          <span className="ongoing-pill">Ongoing</span>
+        </>
+      ) : campaign.endDate ? (
+        <> — {new Date(campaign.endDate).toLocaleDateString()}</>
+      ) : null}
+    </span>
+  </div>
+)}
+{/* MEDIA CREDIT (only if external source exists) */}
+{uniqueExternalSources.length > 0 && (
+  <div className="campaign-modal-details-row">
+    <span className="campaign-modal-details-label">MEDIA CREDIT</span>
+    <span className="campaign-modal-details-value">
+      {uniqueExternalSources.length === 1 ? (
+        <a
+          href={uniqueExternalSources[0]}
+          target="_blank"
+          rel="noreferrer"
+          className="campaign-modal-credit-link"
+        >
+          View source
+        </a>
+      ) : (
+        <div className="campaign-modal-credit-list">
+          {uniqueExternalSources.map((url, idx) => (
+            <a
+              key={`${url}-${idx}`}
+              href={url}
+              target="_blank"
+              rel="noreferrer"
+              className="campaign-modal-credit-link"
+            >
+              Source {idx + 1}
+            </a>
+          ))}
+        </div>
+      )}
+    </span>
+  </div>
+)}
+
+
+
             </div>
           </aside>
         </div>

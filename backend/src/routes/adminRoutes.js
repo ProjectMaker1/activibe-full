@@ -20,6 +20,11 @@ import {
   deleteTool,
   createSubTool,
   deleteSubTool,
+  reorderTopics,
+reorderSubtopics,
+reorderTools,
+reorderSubTools,
+
 } from '../controllers/adminController.js';
 import { authRequired, requireAdmin } from '../middleware/authMiddleware.js';
 
@@ -62,4 +67,11 @@ router.delete('/tools/:id', deleteTool);
 
 router.post('/tools/:toolId/subtools', createSubTool);
 router.delete('/subtools/:id', deleteSubTool);
+
+
+router.patch('/topics/reorder', reorderTopics);
+router.patch('/subtopics/reorder', reorderSubtopics);
+router.patch('/tools/reorder', reorderTools);
+router.patch('/subtools/reorder', reorderSubTools);
+
 export default router;

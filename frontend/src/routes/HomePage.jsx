@@ -16,40 +16,31 @@ function HomePage({ theme = "light" }) {
   return (
     <div className="page home-page">
       {/* --- HERO ბლოკი --- */}
-      <section className="home-hero-image">
-        <div className="hero-inner">
-          <h1>ActiVibe – Vibe of Activism</h1>
-          <p>
-            Empowering young voices to shape change through creativity,
-            community and peaceful movements.
-          </p>
-        </div>
+<section className="home-hero-image">
 
-        {/* ქვედა რიგი: მარცხნივ ფოტო, მარჯვნივ AI ღილაკი */}
-        <div className="hero-bottom-row">
-          <img
-            src={heroImageSrc}
-            alt="Young activists illustration"
-            className="hero-illustration"
-          />
+  <div className="hero-inner">
+    <h1>ActiVibe – Vibe of Activism</h1>
+    <p>
+      Empowering young voices to shape change through creativity,
+      community and peaceful movements.
+    </p>
+  </div>
 
-          <button className="loader-wrapper" onClick={handleAiClick}>
-            <span className="loader-letter">A</span>
-            <span className="loader-letter">I</span>
-            <span className="loader-letter"> </span>
-            <span className="loader-letter">A</span>
-            <span className="loader-letter">s</span>
-            <span className="loader-letter">s</span>
-            <span className="loader-letter">i</span>
-            <span className="loader-letter">s</span>
-            <span className="loader-letter">t</span>
-            <span className="loader-letter">a</span>
-            <span className="loader-letter">n</span>
-            <span className="loader-letter">t</span>
-            <div className="loader"></div>
-          </button>
-        </div>
-      </section>
+<div className="hero-bottom-row">
+  <img
+    src={heroImageSrc}
+    alt="Hero"
+    className="hero-illustration"
+  />
+
+  <button className="loader-wrapper" onClick={handleAiClick}>
+    <span className="loader-text">AI Assistant</span>
+    <div className="loader"></div>
+  </button>
+</div>
+
+</section>
+
 
       {/* Why ActiVibe */}
       <section className="section why">

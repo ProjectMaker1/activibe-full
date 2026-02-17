@@ -395,26 +395,7 @@ export async function createSession(userId, payload) {
     subToolName,
   };
 
-  if (withWelcome && mentorName && topicName) {
-    return prisma.chatSession.create({
-      data: {
-        ...baseData,
-        messages: {
-          create: [
-            {
-              from: 'BOT',
-              text: `Hi — I’m ${mentorName} (virtual mentor). I’ll help you explore ${topicName.toLowerCase()} through safe, non-violent action. What are you trying to change or protect?`,
-            },
-          ],
-        },
-      },
-      include: {
-        messages: {
-          orderBy: { createdAt: 'asc' },
-        },
-      },
-    });
-  }
+
 
   return prisma.chatSession.create({
     data: baseData,

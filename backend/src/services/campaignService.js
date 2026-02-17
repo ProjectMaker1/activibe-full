@@ -25,7 +25,6 @@ export async function listAllCampaigns() {
   });
 }
 
-
 // ახალი კამპანიის შექმნა
 export async function createCampaign(data, user) {
   const status = user.role === 'ADMIN' ? 'APPROVED' : 'PENDING';
@@ -34,13 +33,15 @@ export async function createCampaign(data, user) {
     title,
     description,
     country,
-    topic,
-    subtopic,
+    topics,
+    subtopics,
     tools,
-    subTool, 
+    subTools,
+    startDate,
+    endDate,
+    isOngoing,
     imageUrl: bodyImageUrl,
     videoUrl: bodyVideoUrl,
-    date,
     media,
   } = data;
 
@@ -64,13 +65,19 @@ export async function createCampaign(data, user) {
       imageUrl,
       videoUrl,
       country: country || null,
-      topic: topic || null,
-      subtopic: subtopic || null,
-      tools: tools || null,
-      subTool: subTool || null, 
-      date: date ? new Date(date) : new Date(),
+
+      topics: Array.isArray(topics) ? topics : [],
+      subtopics: Array.isArray(subtopics) ? subtopics : [],
+      tools: Array.isArray(tools) ? tools : [],
+      subTools: Array.isArray(subTools) ? subTools : [],
+
+      startDate: startDate ? new Date(startDate) : new Date(),
+      endDate: isOngoing ? null : (endDate ? new Date(endDate) : null),
+      isOngoing: !!isOngoing,
+
       status,
       createdById: user.id,
+
       media:
         Array.isArray(media) && media.length
           ? {
@@ -78,20 +85,26 @@ export async function createCampaign(data, user) {
                 url: m.url,
                 kind: m.kind,
                 order: m.order ?? index,
+
+                // ✅ NEW — media source მხარდაჭერა
+                sourceType: m.sourceType || 'OWN',
+                sourceUrl: m.sourceUrl || null,
               })),
             }
           : undefined,
     },
-    include: { media: { orderBy: { order: 'asc' } } },
+    include: {
+      media: { orderBy: { order: 'asc' } },
+    },
   });
 }
 
-
-// ❗ მთავარი პრობლემა აქ იყო — media არ იშლებოდა
-// ეს ფუნქცია სწორად შლის campaign + media-ს
+// Campaign + media deletion
 export async function deleteCampaign(id) {
   return prisma.$transaction(async (tx) => {
-    await tx.campaignMedia.deleteMany({ where: { campaignId: id } });
+    await tx.campaignMedia.deleteMany({
+      where: { campaignId: id },
+    });
 
     return tx.campaign.delete({
       where: { id },
@@ -99,12 +112,9 @@ export async function deleteCampaign(id) {
   });
 }
 
-
-
 // სტატუსის შეცვლა + ბეიჯის მინიჭება
 export async function setCampaignStatus(id, status) {
   return prisma.$transaction(async (tx) => {
-    // ძველი კამპანიის წამოღება ავტორით
     const existing = await tx.campaign.findUnique({
       where: { id },
       include: {
@@ -120,13 +130,11 @@ export async function setCampaignStatus(id, status) {
       throw err;
     }
 
-    // სტატუსის განახლება
     const updated = await tx.campaign.update({
       where: { id },
       data: { status },
     });
 
-    // თუ წავიდა PENDING → APPROVED და ავტორი ADMIN არაა → ბეიჯი +1
     if (
       existing.status === 'PENDING' &&
       status === 'APPROVED' &&

@@ -31,14 +31,16 @@ model Campaign {
 
   imageUrl    String?
   videoUrl    String?
+ country     String? 
+topics      Json?
+subtopics   Json?
+tools       Json?
+subTools    Json?
 
-  country     String?
-  topic       String?
-  subtopic    String?
-  tools       String?
-  subTool     String? 
+startDate DateTime @default(now())
+endDate   DateTime?
+isOngoing Boolean  @default(false)
 
-  date        DateTime        @default(now())
   status      CampaignStatus  @default(PENDING)
   createdAt   DateTime        @default(now())
 
@@ -50,16 +52,7 @@ model Campaign {
 
 
 // ახალი მოდელი: ბევრზე-ბევრი media თითო კამპანიაზე
-model CampaignMedia {
-  id         Int         @id @default(autoincrement())
-  url        String
-  kind       MediaType   // IMAGE ან VIDEO
-  order      Int         @default(0)
-  createdAt  DateTime    @default(now())
 
-  campaign   Campaign    @relation(fields: [campaignId], references: [id])
-  campaignId Int
-}
 
 enum Role {
   USER
@@ -80,6 +73,7 @@ enum MediaType {
 model Topic {
   id        Int        @id @default(autoincrement())
   name      String     @unique
+   order     Int         @default(0)
   createdAt DateTime   @default(now())
 
   subtopics SubTopic[]
@@ -88,6 +82,7 @@ model Topic {
 model SubTopic {
   id        Int       @id @default(autoincrement())
   name      String
+  order   Int    @default(0)
   createdAt DateTime  @default(now())
 
   topic     Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
@@ -99,6 +94,7 @@ model SubTopic {
 model Tool {
   id        Int        @id @default(autoincrement())
   name      String     @unique
+   order     Int        @default(0)
   createdAt DateTime   @default(now())
   isActive  Boolean    @default(true)
 
@@ -108,6 +104,7 @@ model Tool {
 model SubTool {
   id        Int       @id @default(autoincrement())
   name      String
+  order  Int   @default(0)
   createdAt DateTime  @default(now())
 
   tool      Tool      @relation(fields: [toolId], references: [id], onDelete: Cascade)
@@ -150,4 +147,23 @@ enum ChatSender {
   USER
   BOT
   SYSTEM
+}
+enum MediaSourceType {
+  OWN
+  EXTERNAL
+}
+
+model CampaignMedia {
+  id         Int         @id @default(autoincrement())
+  url        String
+  kind       MediaType
+  order      Int         @default(0)
+  createdAt  DateTime    @default(now())
+
+  // ✅ NEW: media credit/reference
+  sourceType MediaSourceType @default(OWN)
+  sourceUrl  String?
+
+  campaign   Campaign    @relation(fields: [campaignId], references: [id])
+  campaignId Int
 }

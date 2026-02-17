@@ -2,6 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { apiRequest, withAuth } from '@shared/apiClient.js';
 import Loader from '../components/Loader.jsx';
+import {
+  DndContext,
+  closestCenter,
+} from '@dnd-kit/core';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
 
 function CategoriesManager() {
   const { tokens } = useAuth();
@@ -78,9 +90,8 @@ function CategoriesManager() {
         subtopics: [],
       };
 
-      setTopics((prev) =>
-        [...prev, topicWithSubtopics].sort((a, b) => a.name.localeCompare(b.name))
-      );
+ setTopics((prev) => [...prev, topicWithSubtopics]);
+
 
       setNewTopicName('');
       if (!selectedTopicId) setSelectedTopicId(topicWithSubtopics.id);
@@ -109,9 +120,8 @@ function CategoriesManager() {
           t.id === selectedTopicId
             ? {
                 ...t,
-                subtopics: [...t.subtopics, res.subtopic].sort((a, b) =>
-                  a.name.localeCompare(b.name)
-                ),
+subtopics: [...t.subtopics, res.subtopic],
+
               }
             : t
         )
@@ -145,7 +155,7 @@ function CategoriesManager() {
       };
 
       setTools((prev) =>
-        [...prev, toolWithSubTools].sort((a, b) => a.name.localeCompare(b.name))
+[...prev, toolWithSubTools]
       );
       setNewToolName('');
 
@@ -175,9 +185,8 @@ function CategoriesManager() {
           t.id === selectedToolId
             ? {
                 ...t,
-                subTools: [...(t.subTools || []), res.subTool].sort((a, b) =>
-                  a.name.localeCompare(b.name)
-                ),
+subTools: [...(t.subTools || []), res.subTool],
+
               }
             : t
         )
@@ -261,6 +270,60 @@ function CategoriesManager() {
 
   const selectedTopic = topics.find((t) => t.id === selectedTopicId) || null;
   const selectedTool = tools.find((t) => t.id === selectedToolId) || null;
+const handleTopicDragEnd = async (event) => {
+  const { active, over } = event;
+
+  if (!over || active.id === over.id) return;
+
+  const oldIndex = topics.findIndex((t) => t.id === active.id);
+  const newIndex = topics.findIndex((t) => t.id === over.id);
+
+  const newOrder = arrayMove(topics, oldIndex, newIndex);
+  setTopics(newOrder);
+
+  try {
+    await apiRequest(
+      '/admin/topics/reorder',
+      withAuth(accessToken, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: {
+          ids: newOrder.map((t) => t.id),
+        },
+      })
+    );
+  } catch (err) {
+    console.error(err);
+    alert('Failed to reorder topics');
+  }
+};
+
+const handleToolDragEnd = async (event) => {
+  const { active, over } = event;
+  if (!over || active.id === over.id) return;
+
+  const oldIndex = tools.findIndex((t) => t.id === active.id);
+  const newIndex = tools.findIndex((t) => t.id === over.id);
+
+  const newOrder = arrayMove(tools, oldIndex, newIndex);
+  setTools(newOrder);
+
+  try {
+    await apiRequest(
+      '/admin/tools/reorder',
+      withAuth(accessToken, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: {
+          ids: newOrder.map((t) => t.id),
+        },
+      })
+    );
+  } catch (err) {
+    console.error(err);
+    alert('Failed to reorder tools');
+  }
+};
 
   return (
     <div className="categories-page">
@@ -291,37 +354,30 @@ function CategoriesManager() {
               </form>
 
               {topics.length === 0 && <p>No topics yet.</p>}
+{topics.length > 0 && (
+  <DndContext
+    collisionDetection={closestCenter}
+    onDragEnd={handleTopicDragEnd}
+  >
+    <SortableContext
+      items={topics.map((t) => t.id)}
+      strategy={verticalListSortingStrategy}
+    >
+      <ul className="categories-list">
+        {topics.map((topic) => (
+          <SortableTopicItem
+            key={topic.id}
+            topic={topic}
+            selectedTopicId={selectedTopicId}
+            setSelectedTopicId={setSelectedTopicId}
+            requestDelete={requestDelete}
+          />
+        ))}
+      </ul>
+    </SortableContext>
+  </DndContext>
+)}
 
-              {topics.length > 0 && (
-                <ul className="categories-list">
-                  {topics.map((topic) => (
-                    <li
-                      key={topic.id}
-                      className={
-                        topic.id === selectedTopicId
-                          ? 'categories-list-item active'
-                          : 'categories-list-item'
-                      }
-                    >
-                      <button
-                        type="button"
-                        className="link-btn"
-                        onClick={() => setSelectedTopicId(topic.id)}
-                      >
-                        {topic.name}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-icon-danger"
-                        onClick={() => requestDelete('topic', topic)}
-                        title="Delete topic"
-                      >
-                        ×
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </div>
 
             {/* --------- SUB-TOPICS --------- */}
@@ -402,34 +458,28 @@ function CategoriesManager() {
                   <p className="categories-subtitle" style={{ marginTop: 8 }}>
                     Tools
                   </p>
-                  <ul className="categories-list">
-                    {tools.map((tool) => (
-                      <li
-                        key={tool.id}
-                        className={
-                          tool.id === selectedToolId
-                            ? 'categories-list-item active'
-                            : 'categories-list-item'
-                        }
-                      >
-                        <button
-                          type="button"
-                          className="link-btn"
-                          onClick={() => setSelectedToolId(tool.id)}
-                        >
-                          {tool.name}
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-icon-danger"
-                          onClick={() => requestDelete('tool', tool)}
-                          title="Delete tool"
-                        >
-                          ×
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+<DndContext
+  collisionDetection={closestCenter}
+  onDragEnd={handleToolDragEnd}
+>
+  <SortableContext
+    items={tools.map((t) => t.id)}
+    strategy={verticalListSortingStrategy}
+  >
+    <ul className="categories-list">
+      {tools.map((tool) => (
+        <SortableToolItem
+          key={tool.id}
+          tool={tool}
+          selectedToolId={selectedToolId}
+          setSelectedToolId={setSelectedToolId}
+          requestDelete={requestDelete}
+        />
+      ))}
+    </ul>
+  </SortableContext>
+</DndContext>
+
                 </>
               )}
             </div>
@@ -535,6 +585,107 @@ function CategoriesManager() {
         </div>
       )}
     </div>
+  );
+}
+
+function SortableTopicItem({
+  topic,
+  selectedTopicId,
+  setSelectedTopicId,
+  requestDelete,
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: topic.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={
+        topic.id === selectedTopicId
+          ? 'categories-list-item active'
+          : 'categories-list-item'
+      }
+    >
+      <button
+        type="button"
+        className="link-btn"
+        onClick={() => setSelectedTopicId(topic.id)}
+      >
+        {topic.name}
+      </button>
+
+      <button
+        type="button"
+        className="btn-icon-danger"
+        onClick={() => requestDelete('topic', topic)}
+        title="Delete topic"
+      >
+        ×
+      </button>
+    </li>
+  );
+}
+function SortableToolItem({
+  tool,
+  selectedToolId,
+  setSelectedToolId,
+  requestDelete,
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: tool.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={
+        tool.id === selectedToolId
+          ? 'categories-list-item active'
+          : 'categories-list-item'
+      }
+    >
+      <button
+        type="button"
+        className="link-btn"
+        onClick={() => setSelectedToolId(tool.id)}
+      >
+        {tool.name}
+      </button>
+
+      <button
+        type="button"
+        className="btn-icon-danger"
+        onClick={() => requestDelete('tool', tool)}
+        title="Delete tool"
+      >
+        ×
+      </button>
+    </li>
   );
 }
 
