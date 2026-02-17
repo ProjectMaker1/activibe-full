@@ -133,17 +133,21 @@ async function getCampaignByIdForContext(id) {
   const base = getPublicAppUrl().replace(/\/$/, '');
   const c = await prisma.campaign.findFirst({
     where: { id, status: 'APPROVED' },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      country: true,
-      topic: true,
-      subtopic: true,
-      tools: true,
-      subTool: true,
-      date: true,
-    },
+select: {
+  id: true,
+  title: true,
+  description: true,
+  country: true,
+  createdAt: true,
+  topics: true,
+  subtopics: true,
+  tools: true,
+  subTools: true,
+  startDate: true,
+  endDate: true,
+  isOngoing: true,
+},
+
   });
   if (!c) return [];
   return [{ ...c, url: `${base}/campaigns/${c.id}` }];
@@ -155,17 +159,21 @@ async function getLatestApprovedCampaigns(limit) {
     where: { status: 'APPROVED' },
     orderBy: { createdAt: 'desc' },
     take: limit,
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      country: true,
-      topic: true,
-      subtopic: true,
-      tools: true,
-      subTool: true,
-      date: true,
-    },
+select: {
+  id: true,
+  title: true,
+  description: true,
+  country: true,
+  createdAt: true,
+  topics: true,
+  subtopics: true,
+  tools: true,
+  subTools: true,
+  startDate: true,
+  endDate: true,
+  isOngoing: true,
+},
+
   });
   return campaigns.map((c) => ({ ...c, url: `${base}/campaigns/${c.id}` }));
 }
@@ -200,29 +208,30 @@ async function searchApprovedCampaignsForContext(
   const campaigns = await prisma.campaign.findMany({
     where: {
       status: 'APPROVED',
-      OR: [
-        { title: { contains: q, mode: 'insensitive' } },
-        { description: { contains: q, mode: 'insensitive' } },
-        { topic: { contains: q, mode: 'insensitive' } },
-        { subtopic: { contains: q, mode: 'insensitive' } },
-        { tools: { contains: q, mode: 'insensitive' } },
-        { subTool: { contains: q, mode: 'insensitive' } },
-        { country: { contains: q, mode: 'insensitive' } },
-      ],
+OR: [
+  { title: { contains: q, mode: 'insensitive' } },
+  { description: { contains: q, mode: 'insensitive' } },
+  { country: { contains: q, mode: 'insensitive' } },
+],
+
     },
     orderBy: { createdAt: 'desc' },
     take: limit,
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      country: true,
-      topic: true,
-      subtopic: true,
-      tools: true,
-      subTool: true,
-      date: true,
-    },
+select: {
+  id: true,
+  title: true,
+  description: true,
+  country: true,
+  createdAt: true,
+  topics: true,
+  subtopics: true,
+  tools: true,
+  subTools: true,
+  startDate: true,
+  endDate: true,
+  isOngoing: true,
+},
+
   });
 
   if (!campaigns.length) {
@@ -238,12 +247,14 @@ function buildCampaignsContextText(campaigns) {
     .map((c) => {
       const parts = [
         `#${c.id}: ${c.title}`,
-        c.topic ? `topic: ${c.topic}` : null,
-        c.subtopic ? `subtopic: ${c.subtopic}` : null,
-        c.country ? `country: ${c.country}` : null,
-        c.tools ? `tools: ${c.tools}` : null,
-        c.subTool ? `subTool: ${c.subTool}` : null,
-        c.date ? `date: ${new Date(c.date).toISOString().slice(0, 10)}` : null,
+c.topics ? `topics: ${JSON.stringify(c.topics)}` : null,
+c.subtopics ? `subtopics: ${JSON.stringify(c.subtopics)}` : null,
+c.tools ? `tools: ${JSON.stringify(c.tools)}` : null,
+c.subTools ? `subTools: ${JSON.stringify(c.subTools)}` : null,
+c.startDate ? `startDate: ${new Date(c.startDate).toISOString().slice(0, 10)}` : null,
+c.endDate ? `endDate: ${new Date(c.endDate).toISOString().slice(0, 10)}` : null,
+c.isOngoing ? `isOngoing: true` : null,
+
         `url: ${c.url}`,
       ].filter(Boolean);
 
