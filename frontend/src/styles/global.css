@@ -3526,3 +3526,16 @@ button {
 .btn-small-warning:hover{
   filter: brightness(0.95);
 }
+.chatbot-chat-bubble a {
+  color: #1a73e8;
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+.chatbot-chat-bubble a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.chatbot-chat-bubble a:visited {
+  color: #6f42c1;
+}

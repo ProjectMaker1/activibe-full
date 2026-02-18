@@ -3,6 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { apiRequest, withAuth } from '@shared/apiClient.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import Loader from '../components/Loader.jsx';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
+
 function TypingDots() {
   return (
     <>
@@ -761,9 +765,24 @@ className={`chatbot-chat-message ${
                           className="chatbot-chat-message-avatar"
                         />
                       )}
-                    <div className="chatbot-chat-bubble">
-                      {msg._typing ? <TypingDots /> : msg.text}
-                    </div>
+<div className="chatbot-chat-bubble">
+  {msg._typing ? (
+    <TypingDots />
+  ) : (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeSanitize]}
+      components={{
+        a: ({ node, ...props }) => (
+          <a {...props} target="_blank" rel="noopener noreferrer" />
+        ),
+      }}
+    >
+      {String(msg.text || '')}
+    </ReactMarkdown>
+  )}
+</div>
+
                     </div>
                   ))}
                 </div>
