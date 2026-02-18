@@ -167,3 +167,14 @@ model CampaignMedia {
   campaign   Campaign    @relation(fields: [campaignId], references: [id])
   campaignId Int
 }
+model KnowledgeChunk {
+  id         Int      @id @default(autoincrement())
+  source     String
+  page       Int?
+  chunkIndex Int
+  content    String   @db.Text
+  embedding  Unsupported("vector(1536)")
+  createdAt  DateTime @default(now())
+
+  @@index([source])
+}

@@ -1,6 +1,25 @@
 // backend/src/services/chatService.js
 import { prisma } from '../config/prisma.js';
 import { openai } from '../config/openai.js';
+async function searchKnowledgeChunks(query, limit = 5) {
+  const embeddingRes = await openai.embeddings.create({
+    model: process.env.EMBEDDING_MODEL,
+    input: query,
+  });
+
+  const embedding = embeddingRes.data[0].embedding;
+  const vec = `[${embedding.join(",")}]`;
+
+  const results = await prisma.$queryRaw`
+    SELECT content, source, page
+    FROM "KnowledgeChunk"
+    ORDER BY embedding <-> ${vec}::vector
+    LIMIT ${limit}
+  `;
+
+  return results;
+}
+
 
 /* -------------------- Static knowledge (site + nonviolence) -------------------- */
 
@@ -337,6 +356,19 @@ function toChatMessage(role, content) {
 
 async function generateBotReply({ session, userText, campaigns, offTopicHint }) {
   const campaignsText = buildCampaignsContextText(campaigns);
+// 🔎 RAG: retrieve from PDF knowledge base
+let pdfContext = '';
+try {
+  const chunks = await searchKnowledgeChunks(userText, 5);
+  pdfContext = chunks
+    .map(
+      (c) =>
+        `[${c.source} – page ${c.page}]\n${c.content}`
+    )
+    .join('\n\n');
+} catch (e) {
+  console.error('RAG search error:', e);
+}
 
   const history = (session.messages || [])
     .slice(-MAX_HISTORY_MESSAGES)
@@ -351,6 +383,15 @@ async function generateBotReply({ session, userText, campaigns, offTopicHint }) 
       'system',
       `Approved campaigns context (most recent first). Use ONLY these for campaign facts:\n${campaignsText}`
     ),
+    ...(pdfContext
+  ? [
+      toChatMessage(
+        'system',
+        `Knowledge base context from uploaded PDFs. Use this for factual information:\n${pdfContext}`
+      ),
+    ]
+  : []),
+
     ...(offTopicHint
       ? [
           toChatMessage(
