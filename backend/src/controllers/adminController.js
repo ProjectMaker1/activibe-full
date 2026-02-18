@@ -3,7 +3,9 @@ import { prisma } from '../config/prisma.js';
 import {
   listAllCampaigns,
   setCampaignStatus,
-  deleteCampaign as deleteCampaignService, // 👈 ეს დაგავიწყდა, უნდა იყოს
+  deleteCampaign as deleteCampaignService,
+  getCampaignById,
+  updateCampaignAsAdmin,
 } from '../services/campaignService.js';
 
 
@@ -486,6 +488,41 @@ export async function deleteSubTool(req, res, next) {
     });
 
     res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+}
+// -------------------- CAMPAIGN EDIT (ADMIN) --------------------
+
+// GET /api/admin/campaigns/:id  -> ერთი კამპანია სრულად (edit prefill)
+export async function getCampaign(req, res, next) {
+  try {
+    const id = Number(req.params.id);
+    if (!id || Number.isNaN(id)) {
+      return res.status(400).json({ message: 'Invalid campaign id' });
+    }
+
+    const campaign = await getCampaignById(id);
+    if (!campaign) {
+      return res.status(404).json({ message: 'Campaign not found' });
+    }
+
+    res.json({ campaign });
+  } catch (err) {
+    next(err);
+  }
+}
+
+// PUT /api/admin/campaigns/:id  -> update campaign + media (admin edit)
+export async function updateCampaign(req, res, next) {
+  try {
+    const id = Number(req.params.id);
+    if (!id || Number.isNaN(id)) {
+      return res.status(400).json({ message: 'Invalid campaign id' });
+    }
+
+    const updated = await updateCampaignAsAdmin(id, req.body);
+    res.json({ campaign: updated });
   } catch (err) {
     next(err);
   }

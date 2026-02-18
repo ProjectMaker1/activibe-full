@@ -3505,3 +3505,24 @@ button {
 .campaign-modal-credit-link:hover{
   background: rgba(59, 130, 246, 0.18);
 }
+.app-root.theme-dark .existing-media-block{
+  background: rgba(2,6,23,0.6);
+  border-color: #1f2937;
+}
+.app-root.theme-dark .existing-media-title{
+  color: #f9fafb;
+}
+.btn-small-warning{
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  border: none;
+  cursor: pointer;
+  background: #facc15;   /* yellow */
+  color: #854d0e;
+  font-weight: 700;
+}
+
+.btn-small-warning:hover{
+  filter: brightness(0.95);
+}

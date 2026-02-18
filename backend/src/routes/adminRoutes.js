@@ -2,6 +2,8 @@
 import { Router } from 'express';
 import {
   getAllCampaigns,
+  getCampaign,
+  updateCampaign,
   approveCampaign,
   rejectCampaign,
   removeCampaign,
@@ -21,11 +23,11 @@ import {
   createSubTool,
   deleteSubTool,
   reorderTopics,
-reorderSubtopics,
-reorderTools,
-reorderSubTools,
-
+  reorderSubtopics,
+  reorderTools,
+  reorderSubTools,
 } from '../controllers/adminController.js';
+
 import { authRequired, requireAdmin } from '../middleware/authMiddleware.js';
 
 const router = Router();
@@ -35,6 +37,8 @@ router.use(authRequired, requireAdmin);
 
 // campaigns
 router.get('/campaigns', getAllCampaigns);
+router.get('/campaigns/:id', getCampaign);
+router.put('/campaigns/:id', updateCampaign);
 router.post('/campaigns/:id/approve', approveCampaign);
 router.post('/campaigns/:id/reject', rejectCampaign);
 router.delete('/campaigns/:id', removeCampaign);

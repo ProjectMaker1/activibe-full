@@ -7,8 +7,24 @@ import Select from 'react-select';
 import countryList from 'react-select-country-list';
 import 'flag-icons/css/flag-icons.min.css';
 import '../styles/upload.css';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 function UploadPage() {
   const { tokens, user } = useAuth();
+  const location = useLocation();
+  const editCampaignId = location?.state?.editCampaignId ? Number(location.state.editCampaignId) : null;
+  const isEditMode = !!editCampaignId;
+const navigate = useNavigate();
+
+  const [loadingEditCampaign, setLoadingEditCampaign] = useState(false);
+
+  // Existing media (from DB) — edit mode only
+  const [existingMedia, setExistingMedia] = useState([]); // [{id,url,kind,sourceType,sourceUrl}]
+  const [keepMediaIds, setKeepMediaIds] = useState(new Set()); // ids to keep
+
+  // media source override should NOT happen unless admin changes it
+  const [sourceTouched, setSourceTouched] = useState(false);
+  const [sourceWarning, setSourceWarning] = useState('');
 
   // 👉 ახალი: სათაური
   const [title, setTitle] = useState('');
@@ -27,6 +43,7 @@ const [subTools, setSubTools] = useState([]);
   // dropdown data
   const [availableTopics, setAvailableTopics] = useState([]);
   const [availableTools, setAvailableTools] = useState([]);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
 
   const [status, setStatus] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -44,18 +61,27 @@ const [mediaSourceUrl, setMediaSourceUrl] = useState('');
 
   // load topics + tools for dropdowns
 useEffect(() => {
+  if (!tokens?.accessToken) return;
+
   const loadCategories = async () => {
     try {
-      const res = await apiRequest('/categories');
+      const res = await apiRequest(
+        '/admin/categories',
+        withAuth(tokens.accessToken)
+      );
       setAvailableTopics(res.topics ?? []);
       setAvailableTools(res.tools ?? []);
     } catch (err) {
       console.error('Failed to load categories', err);
+    } finally {
+      setCategoriesLoaded(true);
     }
   };
 
   loadCategories();
-}, []);
+}, [tokens?.accessToken]);
+
+
 const topicOptions = useMemo(
   () => (availableTopics ?? []).map(t => ({ value: t.name, label: t.name })),
   [availableTopics]
@@ -92,6 +118,113 @@ const subToolOptions = useMemo(() => {
   return Array.from(map.values());
 }, [tools, availableTools]);
 
+  const toDateInputValue = (d) => {
+    if (!d) return '';
+    const dt = new Date(d);
+    const tzOffset = dt.getTimezoneOffset() * 60000;
+    const local = new Date(dt.getTime() - tzOffset);
+    return local.toISOString().slice(0, 10);
+  };
+
+  useEffect(() => {
+    const loadEditCampaign = async () => {
+      if (!isEditMode) return;
+      if (!tokens?.accessToken) return;
+      if (!categoriesLoaded) return;
+
+      setLoadingEditCampaign(true);
+      setStatus(null);
+      setSourceWarning('');
+      setSourceTouched(false);
+
+      try {
+        const res = await apiRequest(
+          `/admin/campaigns/${editCampaignId}`,
+          withAuth(tokens.accessToken)
+        );
+
+        const c = res?.campaign;
+        if (!c) {
+          setStatus({ type: 'error', message: 'Campaign not found.' });
+          return;
+        }
+
+        // fill simple fields
+        setTitle(c.title || '');
+        setDescription(c.description || '');
+        setStartDate(toDateInputValue(c.startDate));
+        setIsOngoing(!!c.isOngoing);
+        setEndDate(c.isOngoing ? '' : toDateInputValue(c.endDate));
+
+        // country select
+        const foundCountry =
+          c.country
+            ? (countryOptions.find((opt) => opt.value === c.country) || { value: c.country, label: c.country })
+            : null;
+        setCountry(foundCountry);
+
+        // selects expect {value,label}
+        const tVals = (Array.isArray(c.topics) ? c.topics : []).map((x) => ({ value: x, label: x }));
+        const stVals = (Array.isArray(c.subtopics) ? c.subtopics : []).map((x) => ({ value: x, label: x }));
+        const toolVals = (Array.isArray(c.tools) ? c.tools : []).map((x) => ({ value: x, label: x }));
+        const subToolVals = (Array.isArray(c.subTools) ? c.subTools : []).map((x) => ({ value: x, label: x }));
+
+        setTopics(tVals);
+        setSubtopics(stVals);
+        setTools(toolVals);
+        setSubTools(subToolVals);
+
+        // existing media
+        const mediaArr = Array.isArray(c.media) ? c.media : [];
+        setExistingMedia(mediaArr);
+
+        const keep = new Set(mediaArr.map((m) => m.id));
+        setKeepMediaIds(keep);
+
+        // media source prefill:
+        // - თუ ყველა ერთნაირია -> ზუსტად ვავსებთ
+        // - თუ განსხვავებულია -> ვავსებთ "სავარაუდოს" და ვაჩვენებთ warning-ს,
+        //   მაგრამ backend-ზე override-ს არ გავაკეთებთ სანამ admin არ შეცვლის (sourceTouched=false)
+        if (mediaArr.length > 0) {
+          const types = new Set(mediaArr.map((m) => m.sourceType || 'OWN'));
+          const urls = new Set(mediaArr.map((m) => (m.sourceUrl || '').trim()).filter(Boolean));
+
+          if (types.size === 1 && (Array.from(types)[0] === 'OWN' || urls.size === 1)) {
+            const onlyType = Array.from(types)[0];
+            setMediaSourceType(onlyType);
+            setMediaSourceUrl(onlyType === 'EXTERNAL' ? (Array.from(urls)[0] || '') : '');
+          } else {
+            // Mixed sources: UI cannot represent exactly per-item.
+            // We DO NOT overwrite backend values unless admin changes these controls.
+            const hasExternal = mediaArr.some((m) => m.sourceType === 'EXTERNAL');
+            setMediaSourceType(hasExternal ? 'EXTERNAL' : 'OWN');
+            setMediaSourceUrl(hasExternal ? (Array.from(urls)[0] || '') : '');
+
+            setSourceWarning(
+              'This campaign has multiple media sources. Changing “Media source / Source link” will overwrite source info for ALL media on save.'
+            );
+          }
+        } else {
+          // no media -> default
+          setMediaSourceType('OWN');
+          setMediaSourceUrl('');
+        }
+
+        // clear new uploads (Edit prefills existing only)
+        files.forEach((f) => f.preview && URL.revokeObjectURL(f.preview));
+        setFiles([]);
+
+      } catch (err) {
+        console.error(err);
+        setStatus({ type: 'error', message: err.message || 'Failed to load campaign.' });
+      } finally {
+        setLoadingEditCampaign(false);
+      }
+    };
+
+    loadEditCampaign();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, editCampaignId, tokens?.accessToken, categoriesLoaded]);
 
   const handleFileChange = (e) => {
     const list = Array.from(e.target.files || []);
@@ -131,6 +264,13 @@ const subToolOptions = useMemo(() => {
       return copy;
     });
   };
+  const handleRemoveExistingMedia = (mediaId) => {
+    setKeepMediaIds((prev) => {
+      const next = new Set(prev);
+      next.delete(mediaId);
+      return next;
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -155,18 +295,22 @@ const subToolOptions = useMemo(() => {
       return;
     }
 
-    if (!files.length) {
-      setStatus({
-        type: 'error',
-        message: 'Please upload at least one image or video.',
-      });
-      return;
-    }
+const hasExistingKept = isEditMode ? keepMediaIds.size > 0 : false;
+
+if (!files.length && !hasExistingKept) {
+  setStatus({
+    type: 'error',
+    message: 'Please upload at least one image or video.',
+  });
+  return;
+}
+
     // ✅ NEW: source validation (only if EXTERNAL)
-if (mediaSourceType === 'EXTERNAL' && !mediaSourceUrl.trim()) {
+if (sourceTouched && mediaSourceType === 'EXTERNAL' && !mediaSourceUrl.trim()) {
   setStatus({ type: 'error', message: 'Please add a source link for external media.' });
   return;
 }
+
 
 if (!startDate) {
   setStatus({ type: 'error', message: 'Start date is required.' });
@@ -223,12 +367,16 @@ if (!isOngoing && endDate && new Date(endDate) < new Date(startDate)) {
           xhr.send(formData);
         });
 
-      // ყველა ფაილის ატვირთვა Cloudinary-ზე (ჯამური progress-ით)
+// ყველა ფაილის ატვირთვა Cloudinary-ზე (ჯამური progress-ით)
+const uploadCount = files.length || 1;
+
 for (let index = 0; index < files.length; index++) {
+
+
   const item = files[index];
 
   const uploadData = await uploadFileWithProgress(item.file, (percent) => {
-    const portion = 100 / files.length;
+const portion = 100 / uploadCount;
     const total = index * portion + (percent * portion) / 100;
     setUploadProgress(Math.round(total));
   });
@@ -261,60 +409,94 @@ mediaPayload.push({
       // just in case ბოლოში 100% დავაფიქსიროთ
       setUploadProgress(100);
 
-      await apiRequest(
-        '/campaigns',
-        withAuth(tokens.accessToken, {
-          method: 'POST',
-body: {
-  title: title.trim() || 'Untitled Action',
-  description,
-startDate,
-endDate: isOngoing ? null : (endDate || null),
-isOngoing,
+      const baseBody = {
+        title: title.trim() || 'Untitled Action',
+        description,
+        startDate,
+        endDate: isOngoing ? null : (endDate || null),
+        isOngoing,
 
-  country: country?.value || null,
+        country: country?.value || null,
 
-  topics: topics.map(t => t.value),
-  subtopics: subtopics.map(s => s.value),
-  tools: tools.map(t => t.value),
-  subTools: subTools.map(s => s.value),
+        topics: topics.map(t => t.value),
+        subtopics: subtopics.map(s => s.value),
+        tools: tools.map(t => t.value),
+        subTools: subTools.map(s => s.value),
+      };
+if (isEditMode) {
+  const body = {
+    ...baseBody,
+    keepMediaIds: Array.from(keepMediaIds),
+    newMedia: mediaPayload,
+  };
 
-  imageUrl,
-  videoUrl,
-  media: mediaPayload,
+  if (sourceTouched) {
+    body.mediaSourceType = mediaSourceType;
+    body.mediaSourceUrl = mediaSourceType === 'EXTERNAL' ? mediaSourceUrl.trim() : '';
+  }
+
+  await apiRequest(
+    `/admin/campaigns/${editCampaignId}`,
+    withAuth(tokens.accessToken, {
+      method: 'PUT',
+      body,
+    })
+  );
+
+  navigate('/campaigns'); // <- აქ ჩაწერე შენი რეალური route
+  return;
+} else {
+  await apiRequest(
+    '/campaigns',
+    withAuth(tokens.accessToken, {
+      method: 'POST',
+      body: {
+        ...baseBody,
+        imageUrl,
+        videoUrl,
+        media: mediaPayload,
+      },
+    })
+  );
 }
 
-        })
-      );
 
-      const isAdmin = user?.role === 'ADMIN';
+const isAdmin = user?.role === 'ADMIN';
 
-      setStatus({
-        type: 'success',
-        message: isAdmin
-          ? 'Campaign published successfully.'
-          : 'Thank you! Your action was sent for review and will appear once approved.',
-      });
+setStatus({
+  type: 'success',
+  message: isEditMode
+    ? 'Campaign updated successfully.'
+    : isAdmin
+      ? 'Campaign published successfully.'
+      : 'Thank you! Your action was sent for review and will appear once approved.',
+});
+
       setShowSuccessOverlay(true); // 👈 overlay ჩართვა
 
-      // გასუფთავება
-      files.forEach((f) => f.preview && URL.revokeObjectURL(f.preview));
-      setFiles([]);
-      setTitle('');
-      setDescription('');
-setStartDate('');
-setEndDate('');
-setIsOngoing(false);
-setMediaSourceType('OWN');
-setMediaSourceUrl('');
+      // გასუფთავება (მხოლოდ CREATE რეჟიმში)
+      if (!isEditMode) {
+        setFiles([]);
+        setTitle('');
+        setDescription('');
+        setStartDate('');
+        setEndDate('');
+        setIsOngoing(false);
+        setMediaSourceType('OWN');
+        setMediaSourceUrl('');
+        setCountry(null);
+        setTopics([]);
+        setSubtopics([]);
+        setTools([]);
+        setSubTools([]);
+        setUploadProgress(0);
+      } else {
+        // edit mode: new uploads previews გავასუფთავოთ
+        files.forEach((f) => f.preview && URL.revokeObjectURL(f.preview));
+        setFiles([]);
+        setUploadProgress(0);
+      }
 
-      setCountry(null);
-setTopics([]);
-setSubtopics([]);
-setTools([]);
-setSubTools([]);
-
-      setUploadProgress(0);
     } catch (err) {
       console.error(err);
       setStatus({
@@ -329,11 +511,17 @@ setSubTools([]);
   return (
     <div className="page upload-page">
       <section className="page-header">
-        <h1>Share Your Action</h1>
+<h1>{isEditMode ? 'Edit Campaign' : 'Share Your Action'}</h1>
         <p>Show the world how you&apos;re making a difference!</p>
       </section>
 
       <form className="upload-form" onSubmit={handleSubmit}>
+        {status?.type === 'error' && (
+  <div className="edit-warning">
+    {status.message}
+  </div>
+)}
+
         <div className="upload-dropzone">
           <p>Drag &amp; Drop your file here or click to browse</p>
           <p className="upload-sub">Accepted file types: JPG, PNG, MP4</p>
@@ -386,6 +574,47 @@ setSubTools([]);
               ))}
             </div>
           )}
+          {/* EXISTING MEDIA (EDIT MODE) */}
+{isEditMode && (
+  <div className="existing-media-block">
+    <div className="existing-media-title">
+      <span>Existing media</span>
+      <span className="edit-pill">EDIT</span>
+      {loadingEditCampaign && <span style={{ fontWeight: 600, opacity: 0.7 }}>Loading...</span>}
+    </div>
+
+    <div className="existing-media-grid">
+      {(existingMedia || [])
+        .filter((m) => keepMediaIds.has(m.id))
+        .map((m) => (
+          <div key={m.id} className="existing-media-item">
+            {m.kind === 'VIDEO' ? (
+              <video src={m.url} muted loop />
+            ) : (
+              <img src={m.url} alt="Existing media" />
+            )}
+
+            <button
+              type="button"
+              className="existing-media-remove"
+              onClick={() => handleRemoveExistingMedia(m.id)}
+              aria-label="Remove existing media"
+              title="Remove"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+    </div>
+
+    {keepMediaIds.size === 0 && (
+      <div className="edit-warning">
+        You removed all existing media. Please upload at least one new image/video before saving.
+      </div>
+    )}
+  </div>
+)}
+
         </div>
 
         {/* 👉 ახალი ველი – Title */}
@@ -413,11 +642,13 @@ setSubTools([]);
     <span>Media source</span>
     <select
       value={mediaSourceType}
-      onChange={(e) => {
-        const v = e.target.value;
-        setMediaSourceType(v);
-        if (v === 'OWN') setMediaSourceUrl('');
-      }}
+  onChange={(e) => {
+    const v = e.target.value;
+    setMediaSourceType(v);
+    setSourceTouched(true);
+    if (v === 'OWN') setMediaSourceUrl('');
+  }}
+
     >
       <option value="OWN">Own (I created it)</option>
       <option value="EXTERNAL">External (credit source)</option>
@@ -430,11 +661,17 @@ setSubTools([]);
       type="url"
       placeholder="https://..."
       value={mediaSourceUrl}
-      onChange={(e) => setMediaSourceUrl(e.target.value)}
+onChange={(e) => {
+  setMediaSourceUrl(e.target.value);
+  setSourceTouched(true);
+}}
       disabled={mediaSourceType !== 'EXTERNAL'}
     />
   </label>
 </div>
+{isEditMode && sourceWarning && (
+  <div className="edit-warning">{sourceWarning}</div>
+)}
 
 
 <div className="form-row">
@@ -614,7 +851,7 @@ setSubTools([]);
 
 
         <button type="submit" className="btn-primary" disabled={submitting}>
-          {submitting ? 'Submitting...' : 'Submit'}
+{submitting ? 'Submitting...' : (isEditMode ? 'Update' : 'Submit')}
         </button>
       </form>
     </div>

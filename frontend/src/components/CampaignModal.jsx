@@ -1,10 +1,13 @@
 // frontend/src/components/CampaignModal.jsx
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import countryList from 'react-select-country-list';
 import 'flag-icons/css/flag-icons.min.css';
 
+
 function CampaignModal({ campaign, isOpen, onClose, isAdmin = false, onDelete }) {
   if (!isOpen || !campaign) return null;
+  const navigate = useNavigate();
 
   const countryOptions = useMemo(() => countryList().getData(), []);
   const countryMeta =
@@ -310,30 +313,44 @@ useEffect(() => {
           </aside>
         </div>
 
-        <footer className="campaign-modal-footer">
-          {isAdmin && onDelete && (
-            <button
-              type="button"
-              className="btn-small-danger"
-              onClick={() => {
-                if (
-                  window.confirm(
-                    'Are you sure you want to delete this campaign?'
-                  )
-                ) {
-                  onDelete(campaign.id);
-                }
-              }}
-              style={{ marginRight: 'auto' }}
-            >
-              Delete
-            </button>
-          )}
+<footer className="campaign-modal-footer">
+  {isAdmin && onDelete && (
+    <button
+      type="button"
+      className="btn-small-danger"
+      onClick={() => {
+        if (
+          window.confirm(
+            'Are you sure you want to delete this campaign?'
+          )
+        ) {
+          onDelete(campaign.id);
+        }
+      }}
+      style={{ marginRight: 'auto' }}
+    >
+      Delete
+    </button>
+  )}
 
-          <button type="button" className="btn-outline" onClick={onClose}>
-            Close
-          </button>
-        </footer>
+  {isAdmin && (
+    <button
+      type="button"
+      className="btn-small-warning"
+      onClick={() => {
+        onClose?.();
+        navigate('/upload', { state: { editCampaignId: campaign.id } });
+      }}
+    >
+      Edit
+    </button>
+  )}
+
+  <button type="button" className="btn-orange" onClick={onClose}>
+    Close
+  </button>
+</footer>
+
       </div>
     </div>
   );
