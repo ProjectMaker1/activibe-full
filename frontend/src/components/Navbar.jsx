@@ -120,9 +120,10 @@ if (standalone) return;
             Upload
           </NavLink>
           {isAdmin && (
-            <NavLink to="/admin" className="nav-link">
-              Admin panel
-            </NavLink>
+<NavLink to="/admin" className="nav-link nav-link-admin">
+  Admin panel
+</NavLink>
+
           )}
         </nav>
 
@@ -142,7 +143,7 @@ if (standalone) return;
 {!standalone && (
   <button
     type="button"
-    className="btn-outline btn-install"
+className="btn-outline btn-install btn-install-strong"
     onClick={handleInstallClick}
 disabled={!isIos() && !canInstall}
     title={isIos() ? 'Install on iPhone/iPad' : canInstall ? 'Install app' : 'Install not available'}
@@ -228,15 +229,16 @@ disabled={!isIos() && !canInstall}
   <div className="badge-modal-backdrop" onClick={() => setShowIosInstall(false)}>
     <div className="badge-modal" onClick={(e) => e.stopPropagation()}>
       <h2 className="badge-modal-title">Install ActiVibe</h2>
-      <p className="badge-modal-text">
-        iPhone/iPad-ზე Install ასე კეთდება:
-      </p>
+<p className="badge-modal-text">
+  To install on iPhone/iPad:
+</p>
 
-      <div className="ios-install-steps">
-        <div>1) Safari-ში გახსენი ეს საიტი</div>
-        <div>2) დააჭირე <strong>Share</strong> (⬆️)</div>
-        <div>3) აირჩიე <strong>Add to Home Screen</strong></div>
-      </div>
+
+<div className="ios-install-steps">
+  <div>1) Open this website in <strong>Safari</strong></div>
+  <div>2) Tap the <strong>Share</strong> button (⬆️)</div>
+  <div>3) Select <strong>Add to Home Screen</strong></div>
+</div>
 
       <button
         type="button"

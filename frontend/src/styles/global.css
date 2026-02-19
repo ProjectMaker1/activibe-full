@@ -3610,3 +3610,31 @@ button {
 .app-root.theme-dark .ios-install-steps{
   color: var(--text-main);
 }
+/* Install button – stronger look (only this button) */
+.btn-install-strong{
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  color: #ffffff;
+}
+
+.btn-install-strong:hover{
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: #ffffff;
+}
+
+/* Dark mode: still strong, but not too neon */
+.app-root.theme-dark .btn-install-strong{
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+/* Force Admin panel to a new line, keep Upload on the first row */
+.navbar-nav{
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.nav-link-admin{
+  flex-basis: 100%;
+}

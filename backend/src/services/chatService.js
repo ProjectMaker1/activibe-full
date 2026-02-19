@@ -488,7 +488,6 @@ try {
     model: DEFAULT_MODEL,
     messages,
     temperature: TEMPERATURE,
-    max_tokens: MAX_OUTPUT_TOKENS,
   });
 
   const text = (resp.choices?.[0]?.message?.content || '').trim();
