@@ -14,46 +14,49 @@ function CampaignModal({ campaign, isOpen, onClose, isAdmin = false, onDelete })
     (campaign.country &&
       countryOptions.find((c) => c.value === campaign.country)) ||
     null;
+  // ✅ ORDERED media list (DB first, fallback legacy fields)
+  const orderedMedia = useMemo(() => {
+    if (Array.isArray(campaign.media) && campaign.media.length > 0) {
+      return [...campaign.media].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    }
 
-  // სურათები (media + fallback imageUrl)
-  const imageUrls =
-    campaign.media && campaign.media.length
-      ? campaign.media
-          .filter((m) => m.kind === 'IMAGE')
-          .map((m) => m.url)
-      : campaign.imageUrl
-      ? [campaign.imageUrl]
-      : [];
+    // fallback for old campaigns (no campaign.media)
+    const fallback = [];
+    if (campaign.imageUrl) {
+      fallback.push({
+        id: `legacy-image-${campaign.id}`,
+        url: campaign.imageUrl,
+        kind: 'IMAGE',
+        order: 0,
+        sourceType: 'OWN',
+        sourceUrl: null,
+      });
+    }
+    if (campaign.videoUrl) {
+      fallback.push({
+        id: `legacy-video-${campaign.id}`,
+        url: campaign.videoUrl,
+        kind: 'VIDEO',
+        order: fallback.length,
+        sourceType: 'OWN',
+        sourceUrl: null,
+      });
+    }
+    return fallback;
+  }, [campaign]);
 
-  // ვიდეოები (media + fallback videoUrl)
-  const videoUrlsRaw =
-    campaign.media && campaign.media.length
-      ? campaign.media
-          .filter((m) => m.kind === 'VIDEO')
-          .map((m) => m.url)
-      : [];
+  // ✅ slides with numbering (Media 1..N) + per-item references
+  const mediaSlides = useMemo(() => {
+    return orderedMedia.map((m, idx) => ({
+      id: m.id ?? `${m.kind}-${idx}`,
+      type: m.kind === 'VIDEO' ? 'video' : 'image',
+      url: m.url,
+      sourceType: m.sourceType ?? 'OWN',
+      sourceUrl: (m.sourceUrl || '').trim(),
+      label: `Media ${idx + 1}`,
+    }));
+  }, [orderedMedia]);
 
-  const videoUrls =
-    videoUrlsRaw.length > 0
-      ? videoUrlsRaw
-      : campaign.videoUrl
-      ? [campaign.videoUrl]
-      : [];
-  // ✅ NEW: Media source/credit (show only if any media is EXTERNAL)
-  const externalSources = Array.isArray(campaign.media)
-    ? campaign.media
-        .filter((m) => m.sourceType === 'EXTERNAL' && m.sourceUrl)
-        .map((m) => m.sourceUrl.trim())
-    : [];
-
-  // unique list (no duplicates)
-  const uniqueExternalSources = Array.from(new Set(externalSources));
-
-  // 👉 ერთიანი სლაიდების მასივი: ჯერ სურათები, მერე ვიდეოები
-  const mediaSlides = [
-    ...imageUrls.map((url) => ({ type: 'image', url })),
-    ...videoUrls.map((url) => ({ type: 'video', url })),
-  ];
 
   const [activeIndex, setActiveIndex] = useState(0);
 const [isVideoPlaying, setIsVideoPlaying] = useState(false);
@@ -274,14 +277,23 @@ useEffect(() => {
     </span>
   </div>
 )}
-{/* MEDIA CREDIT (only if external source exists) */}
-{uniqueExternalSources.length > 0 && (
+{/* MEDIA REFERENCES (per media item, Media 1..N) */}
+{mediaSlides.length > 0 && (
   <div className="campaign-modal-details-row">
-    <span className="campaign-modal-details-label">MEDIA CREDIT</span>
+    <span className="campaign-modal-details-label">MEDIA REFERENCES</span>
     <span className="campaign-modal-details-value">
-      {uniqueExternalSources.length === 1 ? (
+      <div className="campaign-modal-credit-list">
+        {mediaSlides.map((m, idx) => {
+          const isExternal = m.sourceType === 'EXTERNAL';
+          return (
+<div key={m.id ?? idx} className="campaign-modal-credit-item">
+  <div className="campaign-modal-credit-row">
+    <strong>{m.label}:</strong>
+
+    {isExternal ? (
+      m.sourceUrl ? (
         <a
-          href={uniqueExternalSources[0]}
+          href={m.sourceUrl}
           target="_blank"
           rel="noreferrer"
           className="campaign-modal-credit-link"
@@ -289,23 +301,21 @@ useEffect(() => {
           View source
         </a>
       ) : (
-        <div className="campaign-modal-credit-list">
-          {uniqueExternalSources.map((url, idx) => (
-            <a
-              key={`${url}-${idx}`}
-              href={url}
-              target="_blank"
-              rel="noreferrer"
-              className="campaign-modal-credit-link"
-            >
-              Source {idx + 1}
-            </a>
-          ))}
-        </div>
-      )}
+        <span className="campaign-modal-credit-own">External</span>
+      )
+    ) : (
+      <span className="campaign-modal-credit-own">Own</span>
+    )}
+  </div>
+</div>
+
+          );
+        })}
+      </div>
     </span>
   </div>
 )}
+
 
 
 

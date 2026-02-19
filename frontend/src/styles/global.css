@@ -3505,6 +3505,26 @@ button {
 .campaign-modal-credit-link:hover{
   background: rgba(59, 130, 246, 0.18);
 }
+.campaign-modal-credit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.campaign-modal-credit-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.campaign-modal-credit-own {
+  background: #eef1f6;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
 .app-root.theme-dark .existing-media-block{
   background: rgba(2,6,23,0.6);
   border-color: #1f2937;

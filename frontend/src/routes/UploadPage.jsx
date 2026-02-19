@@ -22,10 +22,6 @@ const navigate = useNavigate();
   const [existingMedia, setExistingMedia] = useState([]); // [{id,url,kind,sourceType,sourceUrl}]
   const [keepMediaIds, setKeepMediaIds] = useState(new Set()); // ids to keep
 
-  // media source override should NOT happen unless admin changes it
-  const [sourceTouched, setSourceTouched] = useState(false);
-  const [sourceWarning, setSourceWarning] = useState('');
-
   // 👉 ახალი: სათაური
   const [title, setTitle] = useState('');
 
@@ -52,12 +48,13 @@ const [subTools, setSubTools] = useState([]);
   const countryOptions = useMemo(() => countryList().getData(), []);
 
   // ბევრი ფაილი: [{ file: File, preview: string }]
-  const [files, setFiles] = useState([]);
-// ✅ NEW: media source (default OWN)
-const [mediaSourceType, setMediaSourceType] = useState('OWN'); // 'OWN' | 'EXTERNAL'
-const [mediaSourceUrl, setMediaSourceUrl] = useState('');
+const [files, setFiles] = useState([]);
 
-
+useEffect(() => {
+  return () => {
+    files.forEach((f) => f.preview && URL.revokeObjectURL(f.preview));
+  };
+}, [files]);
 
   // load topics + tools for dropdowns
 useEffect(() => {
@@ -135,9 +132,6 @@ const subToolOptions = useMemo(() => {
 
       setLoadingEditCampaign(true);
       setStatus(null);
-      setSourceWarning('');
-      setSourceTouched(false);
-
       try {
         const res = await apiRequest(
           `/admin/campaigns/${editCampaignId}`,
@@ -182,35 +176,6 @@ const subToolOptions = useMemo(() => {
         const keep = new Set(mediaArr.map((m) => m.id));
         setKeepMediaIds(keep);
 
-        // media source prefill:
-        // - თუ ყველა ერთნაირია -> ზუსტად ვავსებთ
-        // - თუ განსხვავებულია -> ვავსებთ "სავარაუდოს" და ვაჩვენებთ warning-ს,
-        //   მაგრამ backend-ზე override-ს არ გავაკეთებთ სანამ admin არ შეცვლის (sourceTouched=false)
-        if (mediaArr.length > 0) {
-          const types = new Set(mediaArr.map((m) => m.sourceType || 'OWN'));
-          const urls = new Set(mediaArr.map((m) => (m.sourceUrl || '').trim()).filter(Boolean));
-
-          if (types.size === 1 && (Array.from(types)[0] === 'OWN' || urls.size === 1)) {
-            const onlyType = Array.from(types)[0];
-            setMediaSourceType(onlyType);
-            setMediaSourceUrl(onlyType === 'EXTERNAL' ? (Array.from(urls)[0] || '') : '');
-          } else {
-            // Mixed sources: UI cannot represent exactly per-item.
-            // We DO NOT overwrite backend values unless admin changes these controls.
-            const hasExternal = mediaArr.some((m) => m.sourceType === 'EXTERNAL');
-            setMediaSourceType(hasExternal ? 'EXTERNAL' : 'OWN');
-            setMediaSourceUrl(hasExternal ? (Array.from(urls)[0] || '') : '');
-
-            setSourceWarning(
-              'This campaign has multiple media sources. Changing “Media source / Source link” will overwrite source info for ALL media on save.'
-            );
-          }
-        } else {
-          // no media -> default
-          setMediaSourceType('OWN');
-          setMediaSourceUrl('');
-        }
-
         // clear new uploads (Edit prefills existing only)
         files.forEach((f) => f.preview && URL.revokeObjectURL(f.preview));
         setFiles([]);
@@ -227,33 +192,37 @@ const subToolOptions = useMemo(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, editCampaignId, tokens?.accessToken, categoriesLoaded]);
 
-  const handleFileChange = (e) => {
-    const list = Array.from(e.target.files || []);
-    if (!list.length) return;
+const handleFileChange = (e) => {
+  const list = Array.from(e.target.files || []);
+  if (!list.length) return;
 
-    const next = [];
-    for (const f of list) {
-      if (!f.type.startsWith('image/') && !f.type.startsWith('video/')) {
-        setStatus({
-          type: 'error',
-          message: 'Please select only image or video files.',
-        });
-        continue;
-      }
-      next.push({
-        file: f,
-        preview: URL.createObjectURL(f),
+  const next = [];
+
+  for (const f of list) {
+    if (!f.type.startsWith('image/') && !f.type.startsWith('video/')) {
+      setStatus({
+        type: 'error',
+        message: 'Please select only image or video files.',
       });
+      continue;
     }
 
-    if (next.length) {
-      setFiles((prev) => [...prev, ...next]);
-      setStatus(null);
-    }
+    next.push({
+      file: f,
+      preview: URL.createObjectURL(f),
+      sourceType: 'OWN',
+      sourceUrl: '',
+    });
+  } // ✅ ეს } გაკლდა შენთან
 
-    // იგივე ფაილები რომ ისევ შემოიტანოს, input-value გავასუფთავოთ
-    e.target.value = '';
-  };
+  if (next.length) {
+    setFiles((prev) => [...prev, ...next]);
+    setStatus(null);
+  }
+
+  e.target.value = '';
+};
+
 
   const handleRemoveFile = (index) => {
     setFiles((prev) => {
@@ -306,9 +275,15 @@ if (!files.length && !hasExistingKept) {
   return;
 }
 
-    // ✅ NEW: source validation (only if EXTERNAL)
-if (sourceTouched && mediaSourceType === 'EXTERNAL' && !mediaSourceUrl.trim()) {
-  setStatus({ type: 'error', message: 'Please add a source link for external media.' });
+const bad = files.find(
+  (f) => f.sourceType === 'EXTERNAL' && !String(f.sourceUrl || '').trim()
+);
+
+if (bad) {
+  setStatus({
+    type: 'error',
+    message: 'Please add a source link for every media marked as External.',
+  });
   return;
 }
 
@@ -331,9 +306,6 @@ if (!isOngoing && endDate && new Date(endDate) < new Date(startDate)) {
       let imageUrl = null;
       let videoUrl = null;
       const mediaPayload = []; // ყველა media ჩანაწერი
-  // ✅ freeze (snapshot) source data for this upload
-  const sourceTypeSnapshot = mediaSourceType;
-  const sourceUrlSnapshot = mediaSourceUrl.trim();
 
       const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
       const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
@@ -390,9 +362,12 @@ mediaPayload.push({
   url,
   kind: 'VIDEO',
   order: index,
-  sourceType: sourceTypeSnapshot,
-  sourceUrl: sourceTypeSnapshot === 'EXTERNAL' ? sourceUrlSnapshot : null,
+  sourceType: item.sourceType,
+  sourceUrl: item.sourceType === 'EXTERNAL'
+    ? item.sourceUrl.trim()
+    : null,
 });
+
 
   } else {
     if (!imageUrl) imageUrl = url;
@@ -400,9 +375,10 @@ mediaPayload.push({
   url,
   kind: 'IMAGE',
   order: index,
-  sourceType: sourceTypeSnapshot,
-  sourceUrl: sourceTypeSnapshot === 'EXTERNAL' ? sourceUrlSnapshot : null,
+  sourceType: item.sourceType,
+  sourceUrl: item.sourceType === 'EXTERNAL' ? item.sourceUrl.trim() : null,
 });
+
 
   }
 }
@@ -431,10 +407,6 @@ if (isEditMode) {
     newMedia: mediaPayload,
   };
 
-  if (sourceTouched) {
-    body.mediaSourceType = mediaSourceType;
-    body.mediaSourceUrl = mediaSourceType === 'EXTERNAL' ? mediaSourceUrl.trim() : '';
-  }
 
   await apiRequest(
     `/admin/campaigns/${editCampaignId}`,
@@ -483,8 +455,6 @@ setStatus({
         setStartDate('');
         setEndDate('');
         setIsOngoing(false);
-        setMediaSourceType('OWN');
-        setMediaSourceUrl('');
         setCountry(null);
         setTopics([]);
         setSubtopics([]);
@@ -575,6 +545,57 @@ setStatus({
               ))}
             </div>
           )}
+          {files.length > 0 && (
+  <div className="media-reference-block">
+    <h3>Media References</h3>
+
+    {files.map((item, index) => (
+      <div key={index} className="media-reference-item">
+        <h4>Media {index + 1}</h4>
+
+<div className="form-row">
+  <label className="field">
+    <span>Source</span>
+    <select
+      value={item.sourceType}
+      onChange={(e) => {
+        const value = e.target.value;
+        setFiles((prev) => {
+          const copy = [...prev];
+          copy[index] = { ...copy[index], sourceType: value, sourceUrl: value === 'OWN' ? '' : copy[index].sourceUrl };
+          return copy;
+        });
+      }}
+    >
+      <option value="OWN">Own (I created it)</option>
+      <option value="EXTERNAL">External</option>
+    </select>
+  </label>
+
+  <label className="field">
+    <span>Source link</span>
+    <input
+      type="url"
+      placeholder="https://..."
+      value={item.sourceUrl}
+      disabled={item.sourceType !== 'EXTERNAL'}
+      onChange={(e) => {
+        const value = e.target.value;
+        setFiles((prev) => {
+          const copy = [...prev];
+          copy[index] = { ...copy[index], sourceUrl: value };
+          return copy;
+        });
+      }}
+    />
+  </label>
+</div>
+
+      </div>
+    ))}
+  </div>
+)}
+
           {/* EXISTING MEDIA (EDIT MODE) */}
 {isEditMode && (
   <div className="existing-media-block">
@@ -638,41 +659,6 @@ setStatus({
           />
         </label>
         {/* ✅ Media Source (optional) */}
-<div className="form-row">
-  <label className="field">
-    <span>Media source</span>
-    <select
-      value={mediaSourceType}
-  onChange={(e) => {
-    const v = e.target.value;
-    setMediaSourceType(v);
-    setSourceTouched(true);
-    if (v === 'OWN') setMediaSourceUrl('');
-  }}
-
-    >
-      <option value="OWN">Own (I created it)</option>
-      <option value="EXTERNAL">External (credit source)</option>
-    </select>
-  </label>
-
-  <label className="field">
-    <span>Source link {mediaSourceType === 'EXTERNAL' ? '' : '(optional)'}</span>
-    <input
-      type="url"
-      placeholder="https://..."
-      value={mediaSourceUrl}
-onChange={(e) => {
-  setMediaSourceUrl(e.target.value);
-  setSourceTouched(true);
-}}
-      disabled={mediaSourceType !== 'EXTERNAL'}
-    />
-  </label>
-</div>
-{isEditMode && sourceWarning && (
-  <div className="edit-warning">{sourceWarning}</div>
-)}
 
 
 <div className="form-row">
