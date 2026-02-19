@@ -163,22 +163,8 @@ button {
   height:32px;
   overflow:visible;
 }
-/* Mobile: keep nav links on one row, push Admin to next line */
-@media (max-width: 768px) {
-  .navbar-nav {
-    flex: 1 1 auto;      /* აღარ იყოს 100% */
-    width: auto;         /* აღარ აიძულოს მეორე ხაზზე */
-    flex-wrap: nowrap;   /* ერთ ხაზზე დარჩეს */
-    overflow-x: auto;    /* თუ მაინც არ ეტევა, ჰორიზონტალური scroll */
-    white-space: nowrap;
-  }
 
-  .nav-link-admin {
-    display: none;       /* admin ზედა ნავში აღარ გამოჩნდეს */
-  }
 
-  /* admin ქვემოთ ცალკე ხაზზე — თუ გინდა, მეორე მენიუში ჩავსვამთ */
-}
 
 /* ორივე სურათს ერთნაირი ზომა/ტრანსფორმი აქვს */
 .logo-img{
@@ -1930,12 +1916,20 @@ button {
 
   .navbar-nav {
     order: 2;
-    flex: 1 1 100%;               /* მთლიან სიგანეზე გაიშალოს */
+    flex: 1 1 auto;          /* ❗️ აღარ იყოს 100% */
+    width: auto;
     justify-content: flex-start;
-    flex-wrap: wrap;
-    row-gap: 0.25rem;
+    flex-wrap: nowrap;       /* ❗️ არ ჩამოიტანოს Upload */
+    overflow-x: auto;        /* თუ არ ეტევა, გვერდით scroll */
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    row-gap: 0;              /* აღარ გვჭირდება */
   }
-
+    .nav-link-admin {
+    display: block;
+    flex-basis: 100%;        /* Admin ყოველთვის ქვემოთ გადავა */
+    margin-top: 0.25rem;
+  }
   .navbar-actions {
     order: 3;                     /* ქვედა რიგში გადმოდის */
     width: 100%;
