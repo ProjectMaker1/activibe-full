@@ -93,102 +93,6 @@ button {
   flex: 1;
 }
 
-/* Navbar */
-
-.navbar {
-  background: var(--bg);           /* იგივე ფერი, რაც გვერდის ფონზეა */
-  background-image: none;
-  border-bottom: 1px solid var(--border-soft);
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
-
-}
-
-
-
-.navbar-inner {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0.75rem 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-}
-
-.navbar-logo {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-
-
-
-.navbar-nav {
-  display: flex;
-  gap: 1rem;
-  font-size: 0.95rem;
-}
-
-.nav-link {
-  padding: 0.35rem 0.75rem;
-  border-radius: 999px;
-  color: var(--text-muted);
-}
-
-.nav-link.active {
-  background: rgba(12, 123, 97, 0.08);
-  color: var(--primary-dark);
-  font-weight: 600;
-}
-
-.navbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.navbar-user {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-/* Logo container */
-.logo-slot{
-  display:inline-flex;
-  align-items:center;
-  height:32px;
-  overflow:visible;
-}
-
-
-
-/* ორივე სურათს ერთნაირი ზომა/ტრანსფორმი აქვს */
-.logo-img{
-  height:100%;
-  width:auto;
-  display:block;
-
-  transform: scale(5.2);
-  transform-origin: left center;
-  translate: 0 -2px;
-
-  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
-}
-
-/* default (LIGHT): dark svg დავმალოთ */
-.logo-img--dark{ display:none; }
-.logo-img--light{ display:block; }
-
-/* DARK theme: light svg დავმალოთ, dark svg გამოვაჩინოთ */
-.app-root.theme-dark .logo-img--light{ display:none; }
-.app-root.theme-dark .logo-img--dark{ display:block; }
-
-
-
 /* Buttons */
 
 .btn-primary,
@@ -999,9 +903,6 @@ button {
     grid-template-columns: 1fr;
   }
 
-  .navbar-inner {
-    padding-inline: 1rem;
-  }
 }
 
 @media (max-width: 640px) {
@@ -1895,52 +1796,6 @@ button {
 
   .hero-bottom-row .loader-wrapper {
     margin-top: 1.5rem;
-  }
-}
-
-
-/* Navbar – responsive layout */
-@media (max-width: 768px) {
-  .navbar-inner {
-    max-width: 100%;
-    padding-inline: 1rem;
-    flex-wrap: wrap;              /* რომ დაიშალოს რიგებად */
-    align-items: flex-start;
-    gap: 0.5rem 1rem;
-  }
-
-  .navbar-logo {
-    order: 1;
-    flex: 0 0 auto;
-  }
-
-  .navbar-nav {
-    order: 2;
-    flex: 1 1 auto;          /* ❗️ აღარ იყოს 100% */
-    width: auto;
-    justify-content: flex-start;
-    flex-wrap: nowrap;       /* ❗️ არ ჩამოიტანოს Upload */
-    overflow-x: auto;        /* თუ არ ეტევა, გვერდით scroll */
-    white-space: nowrap;
-    -webkit-overflow-scrolling: touch;
-    row-gap: 0;              /* აღარ გვჭირდება */
-  }
-    .nav-link-admin {
-    display: block;
-    flex-basis: 100%;        /* Admin ყოველთვის ქვემოთ გადავა */
-    margin-top: 0.25rem;
-  }
-  .navbar-actions {
-    order: 3;                     /* ქვედა რიგში გადმოდის */
-    width: 100%;
-    justify-content: flex-start;  /* მარცხნივ დადგეს */
-    margin-top: 0.25rem;
-  }
-
-  .navbar-actions .btn-primary,
-  .navbar-actions .btn-outline {
-    padding-inline: 0.9rem;      /* ცოტა დავაპატარავოთ ღილაკები */
-    font-size: 0.85rem;
   }
 }
 /* ---------- ChatBot Q1 layout ---------- */
@@ -3638,4 +3493,177 @@ button {
   background: var(--primary);
   border-color: var(--primary);
   color: #ffffff;
+}
+/* =========================
+   NAVBAR (FINAL, FIXED)
+   ========================= */
+
+:root{
+  --nav-h: 64px;
+  --nav-pad-x: 1.25rem;
+
+  /* ლოგოს ბაზა + ვიზუალური გადიდება */
+  --logo-base-h: 42px;     /* ეს რეალური height-ია */
+  --logo-scale: 2.15;      /* ეს არის "დიდი" ვიზუალურად */
+}
+
+@media (max-width: 900px){
+  :root{
+    --nav-h: 56px;
+    --nav-pad-x: 1rem;
+    --logo-base-h: 38px;
+    --logo-scale: 2.0;
+  }
+}
+
+.navbar{
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  width: 100%;
+  backdrop-filter: blur(10px);
+  background: rgba(255, 243, 211, 0.72);
+  border-bottom: 1px solid rgba(229, 231, 235, 0.85);
+}
+
+.app-root.theme-dark .navbar{
+  background: rgba(2, 6, 23, 0.72);
+  border-bottom-color: rgba(31, 41, 55, 0.9);
+}
+
+.navbar-inner{
+  max-width: 1200px;
+  margin: 0 auto;
+
+  height: var(--nav-h);          /* ✅ ნავბარის რეალური სიმაღლე */
+  padding: 0 var(--nav-pad-x);   /* ✅ ვერტიკალური padding = 0 (ესაა “სისქის” წამალი) */
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+
+  overflow: hidden;             /* ✅ scale-მა ნავბარი აღარ “გაასქელოს” */
+}
+
+/* LEFT */
+.navbar-left{
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+/* LOGO: კონტეინერი ზუსტად ნავბარის სიმაღლეზე */
+.navbar-logo{
+  height: var(--nav-h);
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* LOGO SLOT: “ფანჯარა”, აქ ვაკონტროლებთ overflow-ს */
+.logo-slot{
+  height: var(--nav-h);
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;             /* ✅ ლოგო დიდი იყოს, მაგრამ შიგნით დარჩეს */
+}
+
+/* თვითონ სურათი */
+.logo-img{
+  height: var(--logo-base-h);
+  width: auto;
+  display: none;
+
+  transform: scale(var(--logo-scale));
+  transform-origin: left center;
+}
+
+/* Theme switch */
+.app-root.theme-light .logo-img--light{ display:block; }
+.app-root.theme-dark  .logo-img--dark{  display:block; }
+
+/* NAV LINKS */
+.navbar-nav{
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.nav-link{
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  color: var(--text-main);
+  opacity: 0.9;
+  transition: background 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
+  white-space: nowrap;
+}
+
+.nav-link:hover{
+  background: rgba(12, 123, 97, 0.10);
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.nav-link.active{
+  background: rgba(12, 123, 97, 0.16);
+  opacity: 1;
+  font-weight: 700;
+}
+
+.app-root.theme-dark .nav-link:hover{
+  background: rgba(34, 197, 94, 0.14);
+}
+
+.app-root.theme-dark .nav-link.active{
+  background: rgba(34, 197, 94, 0.18);
+}
+
+/* RIGHT */
+.navbar-actions{
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.navbar-user{
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Responsive (without hamburger): compact, but stable */
+@media (max-width: 900px){
+  .navbar-inner{
+    gap: 0.75rem;
+  }
+
+  /* სურვილისამებრ: მობილურზე nav-links დამალე, თუ გინდა ერთი ხაზით დარჩეს */
+  /* .navbar-nav{ display:none; } */
+}
+/* ===== MOBILE NAVBAR THIN FIX ===== */
+
+@media (max-width: 900px){
+
+  .navbar-inner{
+    height: 52px !important;   /* იყო 64px */
+    padding: 0 1rem;           /* ვერტიკალური padding 0 */
+  }
+
+  .navbar-logo{
+    height: 52px;
+  }
+
+  .logo-slot{
+    height: 52px;
+  }
+
 }

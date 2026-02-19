@@ -87,45 +87,37 @@ if (standalone) return;
 };
 
   return (
-    <header className="navbar">
-      <div className="navbar-inner">
-<Link to="/" className="navbar-logo" aria-label="ActiVibe home">
-  <span className="logo-slot" style={{ opacity: introActive ? 0 : 1 }}>
-    <img
-      src="/actilogo-static.svg"
-      alt="ActiVibe"
-      className="logo-img logo-img--light"
-    />
-    <img
-      src="/actilogo-static-dark.svg"
-      alt="ActiVibe"
-      className="logo-img logo-img--dark"
-    />
-  </span>
-</Link>
+<header className="navbar">
+  <div className="navbar-inner">
 
+    <div className="navbar-left">
+      <Link to="/" className="navbar-logo" aria-label="ActiVibe home">
+        <span className="logo-slot" style={{ opacity: introActive ? 0 : 1 }}>
+          <img
+            src="/actilogo-static.svg"
+            alt="ActiVibe"
+            className="logo-img logo-img--light"
+          />
+          <img
+            src="/actilogo-static-dark.svg"
+            alt="ActiVibe"
+            className="logo-img logo-img--dark"
+          />
+        </span>
+      </Link>
 
-
-        <nav className="navbar-nav">
-          <NavLink to="/" className="nav-link">
-            Home
+      <nav className="navbar-nav">
+        <NavLink to="/" className="nav-link">Home</NavLink>
+        <NavLink to="/campaigns" className="nav-link">Campaigns</NavLink>
+        <NavLink to="/chatbot" className="nav-link">ChatBot</NavLink>
+        <NavLink to="/upload" className="nav-link">Upload</NavLink>
+        {isAdmin && (
+          <NavLink to="/admin" className="nav-link nav-link-admin">
+            Admin panel
           </NavLink>
-          <NavLink to="/campaigns" className="nav-link">
-            Campaigns
-          </NavLink>
-          <NavLink to="/chatbot" className="nav-link">
-            ChatBot
-          </NavLink>
-          <NavLink to="/upload" className="nav-link">
-            Upload
-          </NavLink>
-          {isAdmin && (
-<NavLink to="/admin" className="nav-link nav-link-admin">
-  Admin panel
-</NavLink>
-
-          )}
-        </nav>
+        )}
+      </nav>
+    </div>
 
         <div className="navbar-actions">
           {/* პატარა ბეჯი Upload-ს და theme switch-ს შორის */}
