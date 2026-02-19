@@ -3667,3 +3667,42 @@ button {
   }
 
 }
+/* ===== MOBILE NAVBAR FIX (no overlap, thin) ===== */
+@media (max-width: 520px){
+
+  .navbar-inner{
+    height: 52px !important;
+    padding: 0 12px !important;
+    flex-wrap: nowrap !important;     /* ✅ wrap OFF */
+    align-items: center !important;
+  }
+
+  .navbar-nav{
+    display: none !important;         /* ✅ Campaigns/ChatBot აღარ “ჩამოიწევა” */
+  }
+
+  .navbar-actions{
+    gap: 0.35rem !important;          /* ✅ მჭიდროდ */
+  }
+
+  /* ღილაკები ცოტა დაპატარავდეს */
+  .btn-install,
+  .btn-install-strong,
+  .btn-primary,
+  .btn-outline{
+    padding: 0.38rem 0.7rem !important;
+    font-size: 0.82rem !important;
+  }
+
+  /* theme switch ოდნავ დაპატარავდეს */
+  .switch{
+    transform: scale(0.85);
+    transform-origin: center;
+  }
+
+  /* ლოგო რომ არ “გაბეროს” ხაზს */
+  .logo-img{
+    transform: none !important;
+    height: 34px !important;
+  }
+}
