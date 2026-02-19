@@ -12,108 +12,127 @@ function Navbar({ theme, onToggleTheme, introActive }) {
     hasNewBadge,
     markBadgesSeen,
   } = useAuth();
+
   const navigate = useNavigate();
 
   const [showBadgeModal, setShowBadgeModal] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [canInstall, setCanInstall] = useState(false);
+  const [showIosInstall, setShowIosInstall] = useState(false);
+  const [standalone, setStandalone] = useState(false);
+
+  const isIos = useCallback(() => {
+    const ua = window.navigator.userAgent || '';
+    const isApple = /iPad|iPhone|iPod/.test(ua);
+    const isIpadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    return isApple || isIpadOS;
+  }, []);
+
+  const isStandalone = useCallback(() => {
+    return (
+      window.matchMedia?.('(display-mode: standalone)')?.matches ||
+      window.navigator.standalone === true
+    );
+  }, []);
+
+  useEffect(() => {
+    setStandalone(isStandalone());
+
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setCanInstall(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, [isStandalone]);
+
+  useEffect(() => {
+    if (hasNewBadge && isAuthenticated) setShowBadgeModal(true);
+  }, [hasNewBadge, isAuthenticated]);
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
-const [deferredPrompt, setDeferredPrompt] = useState(null);
-const [canInstall, setCanInstall] = useState(false);
-const [showIosInstall, setShowIosInstall] = useState(false);
-
-const isIos = useCallback(() => {
-  const ua = window.navigator.userAgent || '';
-  const isApple = /iPad|iPhone|iPod/.test(ua);
-  const isIpadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
-  return isApple || isIpadOS;
-}, []);
-
-const isStandalone = useCallback(() => {
-  return window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone === true;
-}, []);
-
-const [standalone, setStandalone] = useState(false);
-
-useEffect(() => {
-  // პირველივე გაშვებაზე დავიჭიროთ standalone
-  setStandalone(isStandalone());
-
-  const handler = (e) => {
-    e.preventDefault();
-    setDeferredPrompt(e);
-    setCanInstall(true);
-  };
-
-  window.addEventListener('beforeinstallprompt', handler);
-
-  return () => window.removeEventListener('beforeinstallprompt', handler);
-}, [isStandalone]);
-
-
-  // ახალი ბეჯის მიღებაზე გავხსნათ დიდი მოდალი
-  useEffect(() => {
-    if (hasNewBadge && isAuthenticated) {
-      setShowBadgeModal(true);
-    }
-  }, [hasNewBadge, isAuthenticated]);
 
   const handleCloseBadgeModal = async () => {
     await markBadgesSeen();
     setShowBadgeModal(false);
   };
-const handleInstallClick = async () => {
-if (standalone) return;
 
-  if (isIos()) {
-    setShowIosInstall(true);
-    return;
-  }
+  const handleInstallClick = async () => {
+    if (standalone) return;
 
-  if (!deferredPrompt) {
-    // თუ Android/Chrome არ გვაძლევს prompt-ს (მაგ: უკვე installed/unsupported)
-    alert('Install is not available on this browser. Try Chrome on Android.');
-    return;
-  }
+    if (isIos()) {
+      setShowIosInstall(true);
+      return;
+    }
 
-  deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
+    if (!deferredPrompt) {
+      alert('Install is not available on this browser. Try Chrome on Android.');
+      return;
+    }
 
-  // outcome: 'accepted' | 'dismissed'
-  setDeferredPrompt(null);
-  setCanInstall(false);
-};
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+
+    setDeferredPrompt(null);
+    setCanInstall(false);
+  };
 
   return (
-<header className="navbar">
-  <div className="navbar-inner">
+    <header className="navbar">
+      <div className="navbar-inner">
+        {/* LEFT: logo + primary nav */}
+        <div className="navbar-left">
+          <Link to="/" className="navbar-logo" aria-label="ActiVibe home">
+<span className="logo-slot" style={{ opacity: introActive ? 0 : 1 }}>
+  <img
+    src="/actilogo-light.png"
+    alt="ActiVibe"
+    className="logo-img logo-img--light"
+    draggable="false"
+  />
+  <img
+    src="/actilogo-dark.png"
+    alt="ActiVibe"
+    className="logo-img logo-img--dark"
+    draggable="false"
+  />
+</span>
 
-    <div className="navbar-left">
-      <Link to="/" className="navbar-logo" aria-label="ActiVibe home">
-        <span className="logo-slot" style={{ opacity: introActive ? 0 : 1 }}>
-<img src="/actilogo.png" alt="ActiVibe" className="logo-img logo-img--light" />
-<img src="/actilogo-white.png" alt="ActiVibe" className="logo-img logo-img--dark" />
+          </Link>
 
-        </span>
-      </Link>
+          {/* 4 main links ALWAYS one line (scroll if needed) */}
+          <nav className="navbar-nav" aria-label="Primary navigation">
+            <NavLink to="/" className="nav-link">
+              Home
+            </NavLink>
+            <NavLink to="/campaigns" className="nav-link">
+              Campaigns
+            </NavLink>
+            <NavLink to="/chatbot" className="nav-link">
+              ChatBot
+            </NavLink>
+            <NavLink to="/upload" className="nav-link">
+              Upload
+            </NavLink>
+          </nav>
 
-      <nav className="navbar-nav">
-        <NavLink to="/" className="nav-link">Home</NavLink>
-        <NavLink to="/campaigns" className="nav-link">Campaigns</NavLink>
-        <NavLink to="/chatbot" className="nav-link">ChatBot</NavLink>
-        <NavLink to="/upload" className="nav-link">Upload</NavLink>
-        {isAdmin && (
-          <NavLink to="/admin" className="nav-link nav-link-admin">
-            Admin panel
-          </NavLink>
-        )}
-      </nav>
-    </div>
+          {/* Admin can drop below on mobile (CSS handles it) */}
+          {isAdmin && (
+            <nav className="navbar-admin" aria-label="Admin navigation">
+              <NavLink to="/admin" className="nav-link nav-link-admin">
+                Admin panel
+              </NavLink>
+            </nav>
+          )}
+        </div>
 
+        {/* RIGHT: actions */}
         <div className="navbar-actions">
-          {/* პატარა ბეჯი Upload-ს და theme switch-ს შორის */}
           {isAuthenticated && (
             <button
               type="button"
@@ -124,22 +143,27 @@ if (standalone) return;
               <span className="badge-count">{user?.badges ?? 0}</span>
             </button>
           )}
-{/* Install App */}
-{!standalone && (
-  <button
-    type="button"
-className="btn-outline btn-install btn-install-strong"
-    onClick={handleInstallClick}
-disabled={!isIos() && !canInstall}
-    title={isIos() ? 'Install on iPhone/iPad' : canInstall ? 'Install app' : 'Install not available'}
-  >
-    Install App
-  </button>
-)}
 
+          {!standalone && (
+            <button
+              type="button"
+              className="btn-outline btn-install btn-install-strong"
+              onClick={handleInstallClick}
+              disabled={!isIos() && !canInstall}
+              title={
+                isIos()
+                  ? 'Install on iPhone/iPad'
+                  : canInstall
+                    ? 'Install app'
+                    : 'Install not available'
+              }
+            >
+              Install App
+            </button>
+          )}
 
           {/* Theme switch */}
-          <label className="switch theme-switch">
+          <label className="switch theme-switch" aria-label="Toggle theme">
             <span className="sun">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <g fill="#ffd43b">
@@ -154,20 +178,13 @@ disabled={!isIos() && !canInstall}
               </svg>
             </span>
 
-            <input
-              type="checkbox"
-              className="input"
-              onChange={onToggleTheme}
-            />
-
+            <input type="checkbox" className="input" onChange={onToggleTheme} />
             <span className="slider"></span>
           </label>
 
           {isAuthenticated ? (
             <>
-              <span className="navbar-user">
-                {user?.username || user?.email}
-              </span>
+              <span className="navbar-user">{user?.username || user?.email}</span>
               <button className="btn-outline" onClick={handleLogout}>
                 Logout
               </button>
@@ -185,7 +202,7 @@ disabled={!isIos() && !canInstall}
         </div>
       </div>
 
-      {/* დიდი ბეჯის მოდალი */}
+      {/* Badge modal */}
       {showBadgeModal && isAuthenticated && (
         <div className="badge-modal-backdrop">
           <div className="badge-modal">
@@ -209,33 +226,36 @@ disabled={!isIos() && !canInstall}
           </div>
         </div>
       )}
+
       {/* iOS Install instructions */}
-{showIosInstall && (
-  <div className="badge-modal-backdrop" onClick={() => setShowIosInstall(false)}>
-    <div className="badge-modal" onClick={(e) => e.stopPropagation()}>
-      <h2 className="badge-modal-title">Install ActiVibe</h2>
-<p className="badge-modal-text">
-  To install on iPhone/iPad:
-</p>
+      {showIosInstall && (
+        <div className="badge-modal-backdrop" onClick={() => setShowIosInstall(false)}>
+          <div className="badge-modal" onClick={(e) => e.stopPropagation()}>
+            <h2 className="badge-modal-title">Install ActiVibe</h2>
+            <p className="badge-modal-text">To install on iPhone/iPad:</p>
 
+            <div className="ios-install-steps">
+              <div>
+                1) Open this website in <strong>Safari</strong>
+              </div>
+              <div>
+                2) Tap the <strong>Share</strong> button (⬆️)
+              </div>
+              <div>
+                3) Select <strong>Add to Home Screen</strong>
+              </div>
+            </div>
 
-<div className="ios-install-steps">
-  <div>1) Open this website in <strong>Safari</strong></div>
-  <div>2) Tap the <strong>Share</strong> button (⬆️)</div>
-  <div>3) Select <strong>Add to Home Screen</strong></div>
-</div>
-
-      <button
-        type="button"
-        className="btn-primary badge-modal-close"
-        onClick={() => setShowIosInstall(false)}
-      >
-        Got it
-      </button>
-    </div>
-  </div>
-)}
-
+            <button
+              type="button"
+              className="btn-primary badge-modal-close"
+              onClick={() => setShowIosInstall(false)}
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

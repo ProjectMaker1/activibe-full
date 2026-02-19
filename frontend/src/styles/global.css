@@ -3499,10 +3499,10 @@ button {
    ========================= */
 
 :root{
-  --nav-h: 64px;
+  --nav-h: 60px;
   --nav-pad-x: 18px;
   --nav-gap: 14px;
-  --logo-h: 40px;          /* რეალური ზომა */
+  --logo-h: 38px;
 }
 
 .navbar{
@@ -3520,64 +3520,66 @@ button {
   border-bottom-color: rgba(31, 41, 55, 0.9);
 }
 
-/* მთავარი კონტეინერი */
 .navbar-inner{
   max-width: 1200px;
   margin: 0 auto;
-  min-height: var(--nav-h);     /* min-height, არა height */
+  min-height: var(--nav-h);
   padding: 10px var(--nav-pad-x);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--nav-gap);
-  flex-wrap: nowrap;            /* დესკტოპზე არ ვwrap-ავთ */
+  flex-wrap: nowrap;
 }
 
-/* LEFT */
+/* LEFT side */
 .navbar-left{
   display: flex;
   align-items: center;
   gap: 14px;
   min-width: 0;
+  flex: 1;
 }
 
 .navbar-logo{
-  display:flex;
-  align-items:center;
-  flex-shrink:0;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 
 .logo-slot{
-  display:flex;
-  align-items:center;
+  display: flex;
+  align-items: center;
+  line-height: 0;
 }
 
+/* logo switch */
 .logo-img{
-  height: 44px;       /* desktop */
+  height: var(--logo-h);
   width: auto;
   display: none;
 }
 
-@media (max-width: 900px){
-  .logo-img{ height: 36px; }   /* mobile */
-}
+/* logo switch - SAFE DEFAULT */
+.logo-img--light{ display:block; }
+.logo-img--dark{ display:none; }
 
+.app-root.theme-dark .logo-img--light{ display:none; }
+.app-root.theme-dark .logo-img--dark{ display:block; }
 
-.app-root.theme-light .logo-img--light{ display:block; }
-.app-root.theme-dark  .logo-img--dark{  display:block; }
-
-/* NAV LINKS */
+/* Primary nav (4 links always one line) */
 .navbar-nav{
   display: flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
-  flex: 1;                      /* შუა ნაწილი იკავებს სივრცეს */
+
+  flex: 1;
   overflow: hidden;
 }
 
 .nav-link{
-  padding: 0.35rem 0.65rem;
+  padding: 0.34rem 0.62rem;
   border-radius: 999px;
   font-size: 0.9rem;
   color: var(--text-main);
@@ -3605,7 +3607,14 @@ button {
   background: rgba(34, 197, 94, 0.18);
 }
 
-/* RIGHT */
+/* Admin nav (can drop below on mobile) */
+.navbar-admin{
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* RIGHT side */
 .navbar-actions{
   display: inline-flex;
   align-items: center;
@@ -3614,46 +3623,66 @@ button {
   white-space: nowrap;
 }
 
-/* ============ Responsive ============ */
+/* =========================
+   Responsive
+   ========================= */
 
-/* 900px-ზე: wrap დაშვებულია და სიმაღლე ავტომატურია */
+/* Tablet/mobile: keep it slim, links stay one row (scroll if needed), admin may go below */
 @media (max-width: 900px){
-  :root{ --nav-h: 56px; --logo-h: 36px; }
+  :root{
+    --nav-h: 56px;
+    --logo-h: 34px;
+  }
 
   .navbar-inner{
-    flex-wrap: wrap;            /* ✅ ახლა wrap ლოგიკურია */
-    row-gap: 10px;
+    padding: 8px 12px;
+    gap: 10px;
   }
 
-  .navbar-left{
-    width: 100%;
-    justify-content: space-between;
+  .nav-link{
+    font-size: 0.82rem;
+    padding: 0.28rem 0.52rem;
   }
 
+  /* 4 main links never wrap, instead scroll horizontally */
   .navbar-nav{
-    width: 100%;
-    justify-content: center;
-    overflow: auto;             /* ✅ თუ ბევრი ლინკია, scroll */
+    overflow-x: auto;
+    overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;      /* Firefox */
+  }
+  .navbar-nav::-webkit-scrollbar{ display:none; }
+
+  /* allow admin to wrap to next line if needed */
+  .navbar-left{
+    flex-wrap: wrap;
+    row-gap: 8px;
   }
 
-  .navbar-actions{
+  .navbar-admin{
     width: 100%;
-    justify-content: center;
-    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 }
 
-/* ძალიან პატარა ეკრანზე: nav links დავმალოთ რომ არ დაიჭეჭყოს */
+/* Very small phones: shrink action buttons a bit, keep everything single row */
 @media (max-width: 520px){
-  .navbar-nav{ display: none; }
+  .navbar-inner{
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .nav-link{
+    font-size: 0.78rem;
+    padding: 0.26rem 0.46rem;
+  }
 
   .btn-install,
   .btn-install-strong,
   .btn-primary,
   .btn-outline{
-    padding: 0.38rem 0.7rem;
-    font-size: 0.82rem;
+    padding: 0.36rem 0.6rem;
+    font-size: 0.80rem;
   }
 
   .switch{
