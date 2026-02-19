@@ -79,6 +79,11 @@ const MENTOR_AVATAR_MAP = {
 
 // 🔹 guest ჩატებისთვის localStorage key
 const GUEST_CHAT_KEY = 'activibe_guest_chats_v1';
+const STARTER_MESSAGES = [
+  "I am new and don't know where to start",
+  "I want to use my skills",
+  "I need inspiration",
+];
 
 function loadGuestChats() {
   try {
@@ -239,6 +244,21 @@ if (!cancelled) {
   const subToolsOptions = selectedTool?.subTools || [];
 
   const activeChat = chats.find((c) => c.id === activeChatId) || null;
+  // --- Starter prompts (only for Direct to AI / ActiVibe Assistant) ---
+
+const hasAnyRealMessage =
+  (activeChat?.messages || []).some((m) => !m._typing && String(m.text || '').trim().length > 0);
+
+const shouldShowStarters =
+  !!activeChat &&
+  (activeChat.mentorName === 'ActiVibe Assistant' || !activeChat.mentorName) &&
+  !hasAnyRealMessage;
+
+const handleStarterClick = (starterText) => {
+  if (!activeChat || isSending) return;
+  handleSendMessage(undefined, starterText);
+};
+
 
   /* ---------- ახალი ჩატის შექმნა (auth → DB, guest → localStorage) ---------- */
   const startNewChat = async ({
@@ -423,11 +443,12 @@ const handleDeleteChat = async (chatId) => {
 };
 
  
-  const handleSendMessage = async (e) => {
-  e.preventDefault();
-  if (!activeChat || !currentMessage.trim() || isSending) return;
+const handleSendMessage = async (e, overrideText) => {
+  if (e?.preventDefault) e.preventDefault();
 
-  const text = currentMessage.trim();
+  const text = (overrideText ?? currentMessage).trim();
+  if (!activeChat || !text || isSending) return;
+
   setCurrentMessage('');
 
   const hasToken = !!tokens?.accessToken;
@@ -449,6 +470,7 @@ const handleDeleteChat = async (chatId) => {
     _typing: true,
     _optimistic: true,
   };
+
 
   // state-ში ეგრევე დავამატოთ ორივე
   setChats((prev) => {
@@ -744,12 +766,27 @@ if (loading) {
                 </header>
 
                 <div className="chatbot-chat-body">
-                  {activeChat.messages.length === 0 && (
-                    <p className="chatbot-chat-empty">
-                      You haven&apos;t sent any messages yet. Say hello to
-                      start the conversation.
-                    </p>
-                  )}
+{shouldShowStarters && (
+  <div className="chatbot-starter-container">
+    <p className="chatbot-starter-title">
+      How would you like to begin?
+    </p>
+
+    <div className="chatbot-starter-buttons">
+      {STARTER_MESSAGES.map((msg) => (
+        <button
+          key={msg}
+          type="button"
+          className="chatbot-starter-btn"
+          onClick={() => handleStarterClick(msg)}
+        >
+          {msg}
+        </button>
+      ))}
+    </div>
+  </div>
+)}
+
 
                   {activeChat.messages.map((msg) => (
                     <div
