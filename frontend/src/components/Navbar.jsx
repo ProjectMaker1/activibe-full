@@ -93,16 +93,9 @@ if (standalone) return;
     <div className="navbar-left">
       <Link to="/" className="navbar-logo" aria-label="ActiVibe home">
         <span className="logo-slot" style={{ opacity: introActive ? 0 : 1 }}>
-          <img
-            src="/actilogo-static.svg"
-            alt="ActiVibe"
-            className="logo-img logo-img--light"
-          />
-          <img
-            src="/actilogo-static-dark.svg"
-            alt="ActiVibe"
-            className="logo-img logo-img--dark"
-          />
+<img src="/actilogo.png" alt="ActiVibe" className="logo-img logo-img--light" />
+<img src="/actilogo-white.png" alt="ActiVibe" className="logo-img logo-img--dark" />
+
         </span>
       </Link>
 

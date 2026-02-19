@@ -3541,24 +3541,27 @@ button {
   min-width: 0;
 }
 
-/* Logo */
 .navbar-logo{
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
+  display:flex;
+  align-items:center;
+  flex-shrink:0;
 }
 
 .logo-slot{
-  display: inline-flex;
-  align-items: center;
+  display:flex;
+  align-items:center;
 }
 
 .logo-img{
-  height: var(--logo-h);
+  height: 44px;       /* desktop */
   width: auto;
   display: none;
-  transform: none;              /* ✅ SCALE ამოვიღეთ */
 }
+
+@media (max-width: 900px){
+  .logo-img{ height: 36px; }   /* mobile */
+}
+
 
 .app-root.theme-light .logo-img--light{ display:block; }
 .app-root.theme-dark  .logo-img--dark{  display:block; }
