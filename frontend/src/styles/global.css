@@ -3757,3 +3757,42 @@ button {
     gap: 4px !important;
   }
 }
+/* =========================
+   Admin panel ONLY goes to a new line (mobile)
+   ========================= */
+
+@media (max-width: 640px){
+  /* ensure left block can create a second row INSIDE it */
+  .navbar-left{
+    flex-wrap: wrap !important;     /* allow admin to drop under */
+    row-gap: 8px !important;
+  }
+
+  /* 4 main links stay on the first row */
+  .navbar-logo,
+  .navbar-nav{
+    flex: 0 0 auto;
+  }
+  .navbar-nav{
+    flex: 1 1 auto !important;      /* keep taking remaining space */
+    min-width: 0 !important;
+  }
+
+  /* Admin panel: force to its own row, full width, alone */
+  .navbar-admin{
+    flex: 0 0 100% !important;
+    width: 100% !important;
+    margin-top: 6px;
+    justify-content: flex-start !important;
+  }
+
+  /* optional: make it look like a separate row (nice separator) */
+  .navbar-admin{
+    padding-top: 6px;
+    border-top: 1px solid rgba(229, 231, 235, 0.6);
+  }
+
+  .app-root.theme-dark .navbar-admin{
+    border-top-color: rgba(31, 41, 55, 0.7);
+  }
+}
