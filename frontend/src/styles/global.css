@@ -3691,3 +3691,69 @@ button {
     transform-origin: center;
   }
 }
+/* =========================
+   NAVBAR: MOBILE GUARANTEE FIX
+   (4 main links always visible in one row)
+   ========================= */
+
+@media (max-width: 640px){
+  /* navbar becomes 2 rows: top (logo+links), bottom (actions) */
+  .navbar-inner{
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    align-items: center;
+  }
+
+  /* Row 1: left takes full width */
+  .navbar-left{
+    flex: 0 0 100% !important;
+    width: 100% !important;
+    flex-wrap: nowrap !important;     /* IMPORTANT: keep logo + links on same row */
+    row-gap: 0 !important;
+  }
+
+  /* Make sure the 4 links never wrap and never shrink away */
+  .navbar-nav{
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow: visible !important;     /* no hiding */
+    flex-wrap: nowrap !important;     /* always one line */
+  }
+
+  .nav-link{
+    flex: 0 0 auto !important;        /* don't shrink into invisibility */
+  }
+
+  /* Slightly reduce logo so 4 links fit comfortably */
+  :root{
+    --logo-h: 30px;
+    --nav-pad-x: 12px;
+  }
+
+  /* Row 2: actions go below */
+  .navbar-actions{
+    flex: 0 0 100% !important;
+    width: 100% !important;
+    justify-content: flex-end !important;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(229, 231, 235, 0.6);
+  }
+
+  /* Admin link can also go below if exists */
+  .navbar-admin{
+    width: auto !important;
+  }
+}
+
+/* Extra safety for VERY small phones */
+@media (max-width: 420px){
+  .nav-link{
+    font-size: 0.76rem !important;
+    padding: 0.24rem 0.42rem !important;
+  }
+
+  .navbar-nav{
+    gap: 4px !important;
+  }
+}
