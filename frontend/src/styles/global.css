@@ -3639,12 +3639,3 @@ button {
   border-color: var(--primary);
   color: #ffffff;
 }
-/* Force Admin panel to a new line, keep Upload on the first row */
-.navbar-nav{
-  flex-wrap: wrap;
-  align-items: center;
-}
-
-.nav-link-admin{
-  flex-basis: 100%;
-}
