@@ -1,4 +1,4 @@
-const CACHE_NAME = 'activibe-cache-v7';
+const CACHE_NAME = 'activibe-cache-v8';
 const OFFLINE_URLS = [
   '/',
   '/index.html',

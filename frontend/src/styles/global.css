@@ -3495,25 +3495,14 @@ button {
   color: #ffffff;
 }
 /* =========================
-   NAVBAR (FINAL, FIXED)
+   NAVBAR (ONE SOURCE OF TRUTH)
    ========================= */
 
 :root{
   --nav-h: 64px;
-  --nav-pad-x: 1.25rem;
-
-  /* ლოგოს ბაზა + ვიზუალური გადიდება */
-  --logo-base-h: 42px;     /* ეს რეალური height-ია */
-  --logo-scale: 2.15;      /* ეს არის "დიდი" ვიზუალურად */
-}
-
-@media (max-width: 900px){
-  :root{
-    --nav-h: 56px;
-    --nav-pad-x: 1rem;
-    --logo-base-h: 38px;
-    --logo-scale: 2.0;
-  }
+  --nav-pad-x: 18px;
+  --nav-gap: 14px;
+  --logo-h: 40px;          /* რეალური ზომა */
 }
 
 .navbar{
@@ -3531,56 +3520,46 @@ button {
   border-bottom-color: rgba(31, 41, 55, 0.9);
 }
 
+/* მთავარი კონტეინერი */
 .navbar-inner{
   max-width: 1200px;
   margin: 0 auto;
-
-  height: var(--nav-h);          /* ✅ ნავბარის რეალური სიმაღლე */
-  padding: 0 var(--nav-pad-x);   /* ✅ ვერტიკალური padding = 0 (ესაა “სისქის” წამალი) */
-
+  min-height: var(--nav-h);     /* min-height, არა height */
+  padding: 10px var(--nav-pad-x);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-
-  overflow: hidden;             /* ✅ scale-მა ნავბარი აღარ “გაასქელოს” */
+  gap: var(--nav-gap);
+  flex-wrap: nowrap;            /* დესკტოპზე არ ვwrap-ავთ */
 }
 
 /* LEFT */
 .navbar-left{
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 14px;
   min-width: 0;
 }
 
-/* LOGO: კონტეინერი ზუსტად ნავბარის სიმაღლეზე */
+/* Logo */
 .navbar-logo{
-  height: var(--nav-h);
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
 }
 
-/* LOGO SLOT: “ფანჯარა”, აქ ვაკონტროლებთ overflow-ს */
 .logo-slot{
-  height: var(--nav-h);
   display: inline-flex;
   align-items: center;
-  overflow: hidden;             /* ✅ ლოგო დიდი იყოს, მაგრამ შიგნით დარჩეს */
 }
 
-/* თვითონ სურათი */
 .logo-img{
-  height: var(--logo-base-h);
+  height: var(--logo-h);
   width: auto;
   display: none;
-
-  transform: scale(var(--logo-scale));
-  transform-origin: left center;
+  transform: none;              /* ✅ SCALE ამოვიღეთ */
 }
 
-/* Theme switch */
 .app-root.theme-light .logo-img--light{ display:block; }
 .app-root.theme-dark  .logo-img--dark{  display:block; }
 
@@ -3588,9 +3567,10 @@ button {
 .navbar-nav{
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  flex-wrap: wrap;
+  gap: 6px;
   min-width: 0;
+  flex: 1;                      /* შუა ნაწილი იკავებს სივრცეს */
+  overflow: hidden;
 }
 
 .nav-link{
@@ -3599,8 +3579,8 @@ button {
   font-size: 0.9rem;
   color: var(--text-main);
   opacity: 0.9;
-  transition: background 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
   white-space: nowrap;
+  transition: background 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
 }
 
 .nav-link:hover{
@@ -3618,7 +3598,6 @@ button {
 .app-root.theme-dark .nav-link:hover{
   background: rgba(34, 197, 94, 0.14);
 }
-
 .app-root.theme-dark .nav-link.active{
   background: rgba(34, 197, 94, 0.18);
 }
@@ -3627,82 +3606,55 @@ button {
 .navbar-actions{
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 10px;
   flex-shrink: 0;
-}
-
-.navbar-user{
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Responsive (without hamburger): compact, but stable */
+/* ============ Responsive ============ */
+
+/* 900px-ზე: wrap დაშვებულია და სიმაღლე ავტომატურია */
 @media (max-width: 900px){
-  .navbar-inner{
-    gap: 0.75rem;
-  }
-
-  /* სურვილისამებრ: მობილურზე nav-links დამალე, თუ გინდა ერთი ხაზით დარჩეს */
-  /* .navbar-nav{ display:none; } */
-}
-/* ===== MOBILE NAVBAR THIN FIX ===== */
-
-@media (max-width: 900px){
+  :root{ --nav-h: 56px; --logo-h: 36px; }
 
   .navbar-inner{
-    height: 52px !important;   /* იყო 64px */
-    padding: 0 1rem;           /* ვერტიკალური padding 0 */
+    flex-wrap: wrap;            /* ✅ ახლა wrap ლოგიკურია */
+    row-gap: 10px;
   }
 
-  .navbar-logo{
-    height: 52px;
-  }
-
-  .logo-slot{
-    height: 52px;
-  }
-
-}
-/* ===== MOBILE NAVBAR FIX (no overlap, thin) ===== */
-@media (max-width: 520px){
-
-  .navbar-inner{
-    height: 52px !important;
-    padding: 0 12px !important;
-    flex-wrap: nowrap !important;     /* ✅ wrap OFF */
-    align-items: center !important;
+  .navbar-left{
+    width: 100%;
+    justify-content: space-between;
   }
 
   .navbar-nav{
-    display: none !important;         /* ✅ Campaigns/ChatBot აღარ “ჩამოიწევა” */
+    width: 100%;
+    justify-content: center;
+    overflow: auto;             /* ✅ თუ ბევრი ლინკია, scroll */
+    -webkit-overflow-scrolling: touch;
   }
 
   .navbar-actions{
-    gap: 0.35rem !important;          /* ✅ მჭიდროდ */
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
   }
+}
 
-  /* ღილაკები ცოტა დაპატარავდეს */
+/* ძალიან პატარა ეკრანზე: nav links დავმალოთ რომ არ დაიჭეჭყოს */
+@media (max-width: 520px){
+  .navbar-nav{ display: none; }
+
   .btn-install,
   .btn-install-strong,
   .btn-primary,
   .btn-outline{
-    padding: 0.38rem 0.7rem !important;
-    font-size: 0.82rem !important;
+    padding: 0.38rem 0.7rem;
+    font-size: 0.82rem;
   }
 
-  /* theme switch ოდნავ დაპატარავდეს */
   .switch{
     transform: scale(0.85);
     transform-origin: center;
-  }
-
-  /* ლოგო რომ არ “გაბეროს” ხაზს */
-  .logo-img{
-    transform: none !important;
-    height: 34px !important;
   }
 }
