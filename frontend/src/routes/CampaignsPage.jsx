@@ -1,5 +1,5 @@
 // frontend/src/routes/CampaignsPage.jsx
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import CampaignCard from '../components/CampaignCard.jsx';
 import CampaignModal from '../components/CampaignModal.jsx';
 import { apiRequest, withAuth } from '@shared/apiClient.js';
@@ -26,11 +26,7 @@ function CampaignsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCountry, setFilterCountry] = useState(null); // { value, label } ან null
   const [filterTopic, setFilterTopic] = useState('');
-  const [filterSubtopic, setFilterSubtopic] = useState('');
   const [filterTool, setFilterTool] = useState('');
-  const [filterSubTool, setFilterSubTool] = useState('');
-  const [filterDateFrom, setFilterDateFrom] = useState('');
-  const [filterDateTo, setFilterDateTo] = useState('');
 
   // categories data (topics + tools)
   const [topics, setTopics] = useState([]);
@@ -64,8 +60,6 @@ useEffect(() => {
         console.error('Failed to load categories', err);
       });
   }, []);
-  const fromInputRef = useRef(null);
-  const toInputRef = useRef(null);
 
   // URL -> selected (deep link support)
   useEffect(() => {
@@ -81,30 +75,19 @@ useEffect(() => {
     }
   }, [selectedIdFromUrl]);
 
-  // topic/subtopic options
-  const currentTopicObj = topics.find((t) => t.name === filterTopic) || null;
-  const subtopicOptions = currentTopicObj?.subtopics || [];
-  // tool/sub-tool options
-  const currentToolObj = tools.find((t) => t.name === filterTool) || null;
-  const subToolOptions = currentToolObj?.subTools || [];
-
   // filter change helpers
   const handleTopicChange = (e) => {
     const name = e.target.value;
     setFilterTopic(name);
-    setFilterSubtopic('');
+  
     setCurrentPage(1);
   };
 
-  const handleSubtopicChange = (e) => {
-    setFilterSubtopic(e.target.value);
-    setCurrentPage(1);
-  };
+
 
   const handleToolChange = (e) => {
     const name = e.target.value;
     setFilterTool(name);
-    setFilterSubTool('');   // როცა tool იცვლება, sub-tool ი ქლინავდეს
     setCurrentPage(1);
   };
 
@@ -118,16 +101,27 @@ useEffect(() => {
     setSearchTerm(e.target.value);
     setCurrentPage(1);
   };
-
-  const handleDateFromChange = (e) => {
-    setFilterDateFrom(e.target.value);
-    setCurrentPage(1);
+  const pickName = (v) => {
+    if (!v) return '';
+    if (typeof v === 'string') return v;
+    if (typeof v === 'object') return v.name || v.title || v.label || '';
+    return '';
   };
 
-  const handleDateToChange = (e) => {
-    setFilterDateTo(e.target.value);
-    setCurrentPage(1);
+  const toNameArray = (v) => {
+    if (!v) return [];
+    if (Array.isArray(v)) return v.map(pickName).filter(Boolean);
+    const one = pickName(v);
+    return one ? [one] : [];
   };
+
+  const normalize = (s) => (s || '').toString().trim().toLowerCase();
+
+const matchesAny = (items, selected) => {
+  const sel = normalize(selected);
+  if (!sel) return true;
+  return (items || []).map(normalize).some((x) => x === sel);
+};
 
   const handleDeleteCampaign = async (id) => {
     // უსაფრთხოება — თუ არ არის ადმინი ან არ აქვს ტოკენი, არაფერს ვაკეთებთ
@@ -150,10 +144,7 @@ useEffect(() => {
     }
   };
 
-  const handleSubToolChange = (e) => {
-    setFilterSubTool(e.target.value);
-    setCurrentPage(1);
-  };
+
 
   // filtered campaigns
   const filteredCampaigns = useMemo(() => {
@@ -165,57 +156,41 @@ useEffect(() => {
         const desc = c.description?.toLowerCase() || '';
         if (!title.includes(s) && !desc.includes(s)) return false;
       }
+      // tools filter (robust)
+      if (filterTool) {
+        const campaignTools = toNameArray(c.tools); // supports string/array/object
+
+        const toolObj = tools.find((t) => t.name === filterTool);
+        const groupNames = [
+          filterTool,
+          ...(toolObj?.subTools || []).map((st) => st.name),
+        ].map(normalize);
+
+        const campaignToolNames = campaignTools.map(normalize);
+
+        const matchesTool = campaignToolNames.some((ct) => groupNames.includes(ct));
+        if (!matchesTool) return false;
+      }
 
       // country filter
       if (filterCountry && c.country !== filterCountry.value) {
         return false;
       }
 
-      // topic filter
-      if (filterTopic && c.topic !== filterTopic) {
-        return false;
-      }
+ // topic filter (any-of, supports string/array/object + common keys)
+if (filterTopic) {
+  const campaignTopics = [
+    ...toNameArray(c.topic),
+    ...toNameArray(c.topics),
+    ...toNameArray(c.topicName),
+    ...toNameArray(c.topicNames),
+    ...toNameArray(c.categories),
+  ].filter(Boolean);
 
-      // subtopic filter
-      if (filterSubtopic && c.subtopic !== filterSubtopic) {
-        return false;
-      }
+  if (!matchesAny(campaignTopics, filterTopic)) return false;
+}
 
-      // tools filter (by group)
-      if (filterTool) {
-        const toolObj = tools.find((t) => t.name === filterTool);
-        if (toolObj) {
-          const belongsToTool =
-            (toolObj.subTools || []).some((st) => st.name === c.tools) ||
-            c.tools === filterTool;
 
-          if (!belongsToTool) return false;
-        }
-      }
-
-      // sub-tool filter (exact match)
-      if (filterSubTool && c.tools !== filterSubTool) {
-        return false;
-      }
-
-      // date range filter
-      if (filterDateFrom || filterDateTo) {
-        if (!c.date) return false;
-        const campaignDate = new Date(c.date);
-        if (Number.isNaN(campaignDate.getTime())) return false;
-
-        if (filterDateFrom) {
-          const fromDate = new Date(filterDateFrom);
-          if (campaignDate < fromDate) return false;
-        }
-
-        if (filterDateTo) {
-          const toDate = new Date(filterDateTo);
-          // დღეც შევიყვანოთ შიგნით: if campaignDate > toDate + 1day? მარტივად ასე:
-          toDate.setHours(23, 59, 59, 999);
-          if (campaignDate > toDate) return false;
-        }
-      }
 
       return true;
     });
@@ -224,11 +199,7 @@ useEffect(() => {
     searchTerm,
     filterCountry,
     filterTopic,
-    filterSubtopic,
     filterTool,
-    filterSubTool,
-    filterDateFrom,
-    filterDateTo,
     tools,
   ]);
 
@@ -312,22 +283,6 @@ useEffect(() => {
             ))}
           </select>
 
-          {/* Sub-topic */}
-          <select
-            className="filter-pill"
-            value={filterSubtopic}
-            onChange={handleSubtopicChange}
-            disabled={!subtopicOptions.length}
-          >
-            <option value="">
-              {subtopicOptions.length ? 'Sub-topic (all)' : 'Select topic first'}
-            </option>
-            {subtopicOptions.map((s) => (
-              <option key={s.id} value={s.name}>
-                {s.name}
-              </option>
-            ))}
-          </select>
 
           {/* Tools */}
           <select
@@ -342,75 +297,7 @@ useEffect(() => {
               </option>
             ))}
           </select>
-          {/* Sub-tools */}
-          <select
-            className="filter-pill"
-            value={filterSubTool}
-            onChange={handleSubToolChange}
-            disabled={!subToolOptions.length}
-          >
-            <option value="">
-              {subToolOptions.length ? 'Sub-tools (all)' : 'Select tool first'}
-            </option>
-            {subToolOptions.map((st) => (
-              <option key={st.id} value={st.name}>
-                {st.name}
-              </option>
-            ))}
-          </select>
 
-          {/* Date range */}
-          <button
-            type="button"
-            className="filter-pill date-filter"
-            onClick={() => {
-              if (fromInputRef.current) {
-                if (fromInputRef.current.showPicker) {
-                  fromInputRef.current.showPicker();       // Chrome, Edge, Opera
-                } else {
-                  fromInputRef.current.focus();            // fallback – მაინც focus
-                  fromInputRef.current.click?.();
-                }
-              }
-            }}
-          >
-            <span className="date-filter-label">From</span>
-            <input
-              ref={fromInputRef}
-              id="date-from"
-              type="date"
-              value={filterDateFrom}
-              onChange={handleDateFromChange}
-              className="date-filter-input"
-              onClick={(e) => e.stopPropagation()} // რომ input-ზე კლიკმა button-ს onclick არ გაუშვას უკვე
-            />
-          </button>
-
-          <button
-            type="button"
-            className="filter-pill date-filter"
-            onClick={() => {
-              if (toInputRef.current) {
-                if (toInputRef.current.showPicker) {
-                  toInputRef.current.showPicker();
-                } else {
-                  toInputRef.current.focus();
-                  toInputRef.current.click?.();
-                }
-              }
-            }}
-          >
-            <span className="date-filter-label">To</span>
-            <input
-              ref={toInputRef}
-              id="date-to"
-              type="date"
-              value={filterDateTo}
-              onChange={handleDateToChange}
-              className="date-filter-input"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </button>
         </div>
       </section>
 

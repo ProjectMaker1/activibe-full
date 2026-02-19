@@ -24,9 +24,7 @@ function SignupPage() {
   const [country, setCountry] = useState(null);
   const [status, setStatus] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  if (submitting) {
-    return <Loader />;
-  }
+
 
   // ქვეყნების ლისტი – label/value უბრალო სტრინგებია, ამიტომ search ნორმალურად მუშაობს
   const countryOptions = useMemo(() => countryList().getData(), []);
@@ -70,6 +68,8 @@ function SignupPage() {
         <h1>Sign Up</h1>
 
         <form onSubmit={handleSubmit}>
+            {submitting && <Loader />}
+
           <label className="field">
             <span>Username</span>
             <input
@@ -127,7 +127,7 @@ function SignupPage() {
             </p>
           )}
 <button type="submit" className="btn-primary" disabled={submitting}>
-  Sign Up
+  {submitting ? 'Signing up...' : 'Sign Up'}
 </button>
 
         </form>

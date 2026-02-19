@@ -65,10 +65,11 @@ useEffect(() => {
 
   const loadCategories = async () => {
     try {
-      const res = await apiRequest(
-        '/admin/categories',
-        withAuth(tokens.accessToken)
-      );
+const res = await apiRequest(
+  '/categories',   // ✅ ეს
+  withAuth(tokens.accessToken)
+);
+
       setAvailableTopics(res.topics ?? []);
       setAvailableTools(res.tools ?? []);
     } catch (err) {
@@ -760,7 +761,7 @@ onChange={(e) => {
 
         <div className="form-row">
 <label className="field">
-  <span>Sub-topics</span>
+  <span>Sub-topics (Optional)</span>
   <Select
     isMulti
     options={subtopicOptions}
@@ -801,7 +802,7 @@ onChange={(e) => {
         {/* მეორე row – Sub-tools */}
         <div className="form-row">
 <label className="field">
-  <span>Sub-tools</span>
+  <span>Sub-tools (Optional)</span>
   <Select
     isMulti
     options={subToolOptions}
