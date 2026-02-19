@@ -337,7 +337,13 @@ if (filterTopic) {
                 <button
                   key={page}
                   type="button"
-                  onClick={() => setCurrentPage(page)}
+                  onClick={() => {
+  setCurrentPage(page);
+
+  // ✅ 100% გარანტიით ზემოთ აისქროლებს
+  window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+}}
+
                   style={{
                     minWidth: 32,
                     padding: '0.3rem 0.6rem',
