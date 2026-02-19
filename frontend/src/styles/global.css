@@ -3646,6 +3646,7 @@ button {
 
   /* 4 main links never wrap, instead scroll horizontally */
   .navbar-nav{
+    display: flex !important; 
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
