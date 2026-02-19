@@ -44,38 +44,27 @@ button {
 
 /* Layout */
 
-/* .app-root {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-
-
-  background-image:
-    var(--bg-illustration),
-    var(--bg-fill-color);
-
-  background-size:
-    contain,        
-    cover;          
-
-  background-position:
-    bottom center,
-    center;
-
-  background-repeat:
-    no-repeat,
-    no-repeat;
-} */
 
 .app-root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
+
+  /* შენი საიტის ფონი */
+  background-color: var(--bg);
+
+  /* hero png როგორც მთლიანი საიტის background */
+  background-image: var(--bg-illustration);
+  background-repeat: no-repeat;
+  background-position: bottom center;
+  background-size: contain;
 }
-/* 🌞 LIGHT THEME – აქ არის უკვე არსებული ფერები */
+
+
 .app-root.theme-light {
-  --bg: #fefaf9;
+  --bg: #fff3d3;                 /* ✅ ან ზუსტად ის ფერი რაც გინდა */
+  --bg-illustration: url('/hero-light.png');
+
   --text-main: #111827;
   --text-muted: #6b7280;
   --primary: #0c7b61;
@@ -84,9 +73,11 @@ button {
   --border-soft: #e5e7eb;
 }
 
+
 /* 🌙 DARK THEME – აქ ვარჩევთ მუქ, მაგრამ still ლამაზ ფერებს */
 .app-root.theme-dark {
   --bg: #3b213d;        /* body ფონიც ამას მიჰყვება */
+  --bg-illustration: url('/hero-dark.png');
   --text-main: #e5e7eb; /* ძირითადი ტექსტი ღია */
   --text-muted: #9ca3af; 
   --primary: #22c55e;   /* მწვანე ღილაკები */
@@ -106,6 +97,7 @@ button {
 
 .navbar {
   background: var(--bg);           /* იგივე ფერი, რაც გვერდის ფონზეა */
+  background-image: none;
   border-bottom: 1px solid var(--border-soft);
   position: sticky;
   top: 0;
@@ -3597,4 +3589,24 @@ button {
   background: #f3f4f6;
   border-color: #0c7b61;
   transform: translateY(-1px);
+}
+/* Install button small spacing */
+.btn-install {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+}
+
+/* iOS instructions text */
+.ios-install-steps{
+  margin: 0.9rem 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  text-align: left;
+  font-size: 0.92rem;
+  color: var(--text-main);
+}
+
+.app-root.theme-dark .ios-install-steps{
+  color: var(--text-main);
 }

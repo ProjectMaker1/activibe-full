@@ -1,11 +1,16 @@
-const CACHE_NAME = 'activibe-cache-v1';
+const CACHE_NAME = 'activibe-cache-v2';
 const OFFLINE_URLS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+
+  // ✅ PWA icons (root)
+  '/icon-192.png',
+  '/icon-512.png',
+  '/maskable-192.png',
+  '/maskable-512.png',
 ];
+
 
 self.addEventListener('install', (event) => {
   event.waitUntil(

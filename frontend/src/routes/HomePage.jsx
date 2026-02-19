@@ -2,45 +2,32 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-function HomePage({ theme = "light" }) {
+function HomePage() {
   const navigate = useNavigate();
 
   const handleAiClick = () => {
     navigate("/chatbot");
   };
 
-  // theme-ის მიხედვით ავირჩიოთ ფოტო public-იდან
-  const heroImageSrc =
-    theme === "dark" ? "/hero-dark.png" : "/hero-light.png";
-
   return (
     <div className="page home-page">
       {/* --- HERO ბლოკი --- */}
-<section className="home-hero-image">
+      <section className="home-hero-image">
+        <div className="hero-inner">
+          <h1>ActiVibe – Vibe of Activism</h1>
+          <p>
+            Empowering young voices to shape change through creativity,
+            community and peaceful movements.
+          </p>
+        </div>
 
-  <div className="hero-inner">
-    <h1>ActiVibe – Vibe of Activism</h1>
-    <p>
-      Empowering young voices to shape change through creativity,
-      community and peaceful movements.
-    </p>
-  </div>
-
-<div className="hero-bottom-row">
-  <img
-    src={heroImageSrc}
-    alt="Hero"
-    className="hero-illustration"
-  />
-
-  <button className="loader-wrapper" onClick={handleAiClick}>
-    <span className="loader-text">AI Assistant</span>
-    <div className="loader"></div>
-  </button>
-</div>
-
-</section>
-
+        <div className="hero-bottom-row">
+          <button className="loader-wrapper" onClick={handleAiClick}>
+            <span className="loader-text">AI Assistant</span>
+            <div className="loader"></div>
+          </button>
+        </div>
+      </section>
 
       {/* Why ActiVibe */}
       <section className="section why">

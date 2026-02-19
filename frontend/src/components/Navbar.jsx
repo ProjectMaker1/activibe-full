@@ -1,5 +1,5 @@
 // frontend/src/components/Navbar.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -20,6 +20,38 @@ function Navbar({ theme, onToggleTheme, introActive }) {
     logout();
     navigate('/');
   };
+const [deferredPrompt, setDeferredPrompt] = useState(null);
+const [canInstall, setCanInstall] = useState(false);
+const [showIosInstall, setShowIosInstall] = useState(false);
+
+const isIos = useCallback(() => {
+  const ua = window.navigator.userAgent || '';
+  const isApple = /iPad|iPhone|iPod/.test(ua);
+  const isIpadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+  return isApple || isIpadOS;
+}, []);
+
+const isStandalone = useCallback(() => {
+  return window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone === true;
+}, []);
+
+const [standalone, setStandalone] = useState(false);
+
+useEffect(() => {
+  // პირველივე გაშვებაზე დავიჭიროთ standalone
+  setStandalone(isStandalone());
+
+  const handler = (e) => {
+    e.preventDefault();
+    setDeferredPrompt(e);
+    setCanInstall(true);
+  };
+
+  window.addEventListener('beforeinstallprompt', handler);
+
+  return () => window.removeEventListener('beforeinstallprompt', handler);
+}, [isStandalone]);
+
 
   // ახალი ბეჯის მიღებაზე გავხსნათ დიდი მოდალი
   useEffect(() => {
@@ -32,6 +64,27 @@ function Navbar({ theme, onToggleTheme, introActive }) {
     await markBadgesSeen();
     setShowBadgeModal(false);
   };
+const handleInstallClick = async () => {
+if (standalone) return;
+
+  if (isIos()) {
+    setShowIosInstall(true);
+    return;
+  }
+
+  if (!deferredPrompt) {
+    // თუ Android/Chrome არ გვაძლევს prompt-ს (მაგ: უკვე installed/unsupported)
+    alert('Install is not available on this browser. Try Chrome on Android.');
+    return;
+  }
+
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+
+  // outcome: 'accepted' | 'dismissed'
+  setDeferredPrompt(null);
+  setCanInstall(false);
+};
 
   return (
     <header className="navbar">
@@ -85,6 +138,19 @@ function Navbar({ theme, onToggleTheme, introActive }) {
               <span className="badge-count">{user?.badges ?? 0}</span>
             </button>
           )}
+{/* Install App */}
+{!standalone && (
+  <button
+    type="button"
+    className="btn-outline btn-install"
+    onClick={handleInstallClick}
+disabled={!isIos() && !canInstall}
+    title={isIos() ? 'Install on iPhone/iPad' : canInstall ? 'Install app' : 'Install not available'}
+  >
+    Install App
+  </button>
+)}
+
 
           {/* Theme switch */}
           <label className="switch theme-switch">
@@ -157,6 +223,32 @@ function Navbar({ theme, onToggleTheme, introActive }) {
           </div>
         </div>
       )}
+      {/* iOS Install instructions */}
+{showIosInstall && (
+  <div className="badge-modal-backdrop" onClick={() => setShowIosInstall(false)}>
+    <div className="badge-modal" onClick={(e) => e.stopPropagation()}>
+      <h2 className="badge-modal-title">Install ActiVibe</h2>
+      <p className="badge-modal-text">
+        iPhone/iPad-ზე Install ასე კეთდება:
+      </p>
+
+      <div className="ios-install-steps">
+        <div>1) Safari-ში გახსენი ეს საიტი</div>
+        <div>2) დააჭირე <strong>Share</strong> (⬆️)</div>
+        <div>3) აირჩიე <strong>Add to Home Screen</strong></div>
+      </div>
+
+      <button
+        type="button"
+        className="btn-primary badge-modal-close"
+        onClick={() => setShowIosInstall(false)}
+      >
+        Got it
+      </button>
+    </div>
+  </div>
+)}
+
     </header>
   );
 }
