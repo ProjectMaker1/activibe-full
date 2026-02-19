@@ -163,6 +163,22 @@ button {
   height:32px;
   overflow:visible;
 }
+/* Mobile: keep nav links on one row, push Admin to next line */
+@media (max-width: 768px) {
+  .navbar-nav {
+    flex: 1 1 auto;      /* აღარ იყოს 100% */
+    width: auto;         /* აღარ აიძულოს მეორე ხაზზე */
+    flex-wrap: nowrap;   /* ერთ ხაზზე დარჩეს */
+    overflow-x: auto;    /* თუ მაინც არ ეტევა, ჰორიზონტალური scroll */
+    white-space: nowrap;
+  }
+
+  .nav-link-admin {
+    display: none;       /* admin ზედა ნავში აღარ გამოჩნდეს */
+  }
+
+  /* admin ქვემოთ ცალკე ხაზზე — თუ გინდა, მეორე მენიუში ჩავსვამთ */
+}
 
 /* ორივე სურათს ერთნაირი ზომა/ტრანსფორმი აქვს */
 .logo-img{
