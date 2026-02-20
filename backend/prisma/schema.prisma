@@ -24,26 +24,26 @@ model User {
 }
 
 model Campaign {
-  id          Int             @id @default(autoincrement())
-  title       String
-  description String
-  imageUrl    String?
-  videoUrl    String?
-  status      CampaignStatus  @default(PENDING)
-  createdAt   DateTime        @default(now())
-  createdById Int?
-  subTools    Json?
-  subtopics   Json?
-  topics      Json?
-  tools       Json?
-  country     String?
-  endDate     DateTime?
-  isOngoing   Boolean         @default(false)
-  startDate   DateTime        @default(now())
-  createdBy   User?           @relation(fields: [createdById], references: [id])
-  media       CampaignMedia[]
-  referenceType String @default("OWN")
+  id            Int             @id @default(autoincrement())
+  title         String
+  description   String
+  imageUrl      String?
+  videoUrl      String?
+  status        CampaignStatus  @default(PENDING)
+  createdAt     DateTime        @default(now())
+  createdById   Int?
+  subTools      Json?
+  subtopics     Json?
+  topics        Json?
+  tools         Json?
+  country       String?
+  endDate       DateTime?
+  isOngoing     Boolean         @default(false)
+  startDate     DateTime        @default(now())
+  referenceType String          @default("OWN")
   references    String?
+  createdBy     User?           @relation(fields: [createdById], references: [id])
+  media         CampaignMedia[]
 }
 
 model Topic {
