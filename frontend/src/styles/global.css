@@ -3677,30 +3677,87 @@ button {
   );
 }
 
-/* Dark mode */
-.app-root.theme-dark .why-card{
+/* =========================
+   Static pages (About/Contact/Privacy)
+   Transparent / glass background that sits on site bg
+   ========================= */
+
+.static-page{
+  /* page already has padding from .page; keep it clean */
+  background: transparent;
+  min-height: calc(100vh - var(--nav-h, 60px));
+  padding: 2rem 1.5rem 3rem; /* match .page spacing (safe) */
+}
+
+/* your inner content container */
+.static-page .container{
+  max-width: 900px;
+  margin: 0 auto;
+  line-height: 1.7;
+
+  /* ✅ glass */
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(17, 24, 39, 0.10);
+  border-radius: 18px;
+  padding: 1.8rem 1.6rem;
+
+  /* subtle depth */
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(10px);
+}
+
+/* typography */
+.static-page h1{
+  margin: 0 0 0.9rem;
+}
+
+.static-page h2{
+  margin-top: 1.6rem;
+}
+
+.static-page h3{
+  margin-top: 1.2rem;
+}
+
+.static-page p{
+  color: var(--text-main);
+}
+
+.static-page ul{
+  padding-left: 1.2rem;
+  margin: 0.6rem 0 1rem;
+}
+
+.static-page li{
+  margin: 0.25rem 0;
+  color: var(--text-main);
+}
+
+/* Links inside static pages */
+.static-page a{
+  color: var(--primary);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+/* 🌙 Dark theme: deeper glass */
+.app-root.theme-dark .static-page .container{
   background: rgba(2, 6, 23, 0.82);
   border-color: rgba(255, 255, 255, 0.10);
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
 }
-.static-page {
-  padding: 60px 20px;
-  background: #f9fafc;
-  min-height: 100vh;
-}
 
-.static-page .container {
-  max-width: 900px;
-  margin: 0 auto;
-  line-height: 1.7;
-}
+/* responsive */
+@media (max-width: 640px){
+  .static-page{
+    padding: 1.4rem 1rem 2.2rem;
+  }
 
-.static-page h1 {
-  margin-bottom: 20px;
-}
-
-.static-page h2 {
-  margin-top: 30px;
+  .static-page .container{
+    padding: 1.3rem 1.1rem;
+    border-radius: 16px;
+  }
 }
 /* =======================
 /* =========================
