@@ -13,7 +13,16 @@ root.render(
     </BrowserRouter>
   </React.StrictMode>
 );
+// ✅ TEMP: fully remove any previously registered SW + clear caches
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((regs) => {
+    regs.forEach((r) => r.unregister());
+  });
 
+  if (window.caches) {
+    caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)));
+  }
+}
 // // ✅ Service Worker (PWA)
 // if ('serviceWorker' in navigator) {
 //   window.addEventListener('load', () => {
