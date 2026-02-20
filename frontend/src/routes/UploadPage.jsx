@@ -43,6 +43,9 @@ const [subTools, setSubTools] = useState([]);
 
   const [status, setStatus] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [referenceType, setReferenceType] = useState('OWN');
+const [references, setReferences] = useState('');
+const [referenceError, setReferenceError] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0); // progress bar
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const countryOptions = useMemo(() => countryList().getData(), []);
@@ -129,7 +132,6 @@ const subToolOptions = useMemo(() => {
       if (!isEditMode) return;
       if (!tokens?.accessToken) return;
       if (!categoriesLoaded) return;
-
       setLoadingEditCampaign(true);
       setStatus(null);
       try {
@@ -147,6 +149,8 @@ const subToolOptions = useMemo(() => {
         // fill simple fields
         setTitle(c.title || '');
         setDescription(c.description || '');
+        setReferenceType(c.referenceType || 'OWN');
+        setReferences(c.references || '');
         setStartDate(toDateInputValue(c.startDate));
         setIsOngoing(!!c.isOngoing);
         setEndDate(c.isOngoing ? '' : toDateInputValue(c.endDate));
@@ -274,7 +278,16 @@ if (!files.length && !hasExistingKept) {
   });
   return;
 }
-
+if (referenceType === 'EXTERNAL' && !references.trim()) {
+  setReferenceError(true);
+  setStatus({
+    type: 'error',
+    message: 'Please fill all required fields.',
+  });
+  return;
+} else {
+  setReferenceError(false);
+}
 const bad = files.find(
   (f) => f.sourceType === 'EXTERNAL' && !String(f.sourceUrl || '').trim()
 );
@@ -401,11 +414,13 @@ mediaPayload.push({
         subTools: subTools.map(s => s.value),
       };
 if (isEditMode) {
-  const body = {
-    ...baseBody,
-    keepMediaIds: Array.from(keepMediaIds),
-    newMedia: mediaPayload,
-  };
+const body = {
+  ...baseBody,
+  referenceType,
+  references: referenceType === 'EXTERNAL' ? references.trim() : null,
+  keepMediaIds: Array.from(keepMediaIds),
+  newMedia: mediaPayload,
+};
 
 
   await apiRequest(
@@ -423,12 +438,14 @@ if (isEditMode) {
     '/campaigns',
     withAuth(tokens.accessToken, {
       method: 'POST',
-      body: {
-        ...baseBody,
-        imageUrl,
-        videoUrl,
-        media: mediaPayload,
-      },
+body: {
+  ...baseBody,
+  referenceType,
+  references: referenceType === 'EXTERNAL' ? references.trim() : null,
+  imageUrl,
+  videoUrl,
+  media: mediaPayload,
+},
     })
   );
 }
@@ -835,7 +852,47 @@ setStatus({
   </div>
 )}
 
+<div className="reference-block" style={{ marginTop: 24 }}>
+  <h3>Content Source</h3>
 
+  <div className="form-row">
+    <label className="field">
+      <span>Source</span>
+      <select
+        value={referenceType}
+        onChange={(e) => {
+          const value = e.target.value;
+          setReferenceType(value);
+          if (value === 'OWN') {
+            setReferences('');
+            setReferenceError(false);
+          }
+        }}
+      >
+        <option value="OWN">Own (I created this action)</option>
+        <option value="EXTERNAL">External *</option>
+      </select>
+    </label>
+
+    <label className="field">
+      <span>
+        Source link {referenceType === 'EXTERNAL' && <span style={{color:'red'}}>*</span>}
+      </span>
+<input
+  type="text"
+placeholder="Add link or describe the source"        value={references}
+        disabled={referenceType !== 'EXTERNAL'}
+        onChange={(e) => {
+          setReferences(e.target.value);
+          if (e.target.value.trim()) setReferenceError(false);
+        }}
+        style={{
+          borderColor: referenceError ? 'red' : undefined,
+        }}
+      />
+    </label>
+  </div>
+</div>
 
         <button type="submit" className="btn-primary" disabled={submitting}>
 {submitting ? 'Submitting...' : (isEditMode ? 'Update' : 'Submit')}

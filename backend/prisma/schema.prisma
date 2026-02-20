@@ -3,56 +3,137 @@ generator client {
   binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id        Int        @id @default(autoincrement())
-  email     String     @unique
-  password  String
-  username  String     @unique
-  role      Role       @default(USER)
-  badges    Int        @default(0) 
-  lastSeenBadges Int   @default(0)
-  createdAt DateTime   @default(now())
-  campaigns Campaign[]
-  chats     ChatSession[] 
-  country   String?
-  isBlocked Boolean    @default(false)
+  id             Int           @id @default(autoincrement())
+  email          String        @unique
+  password       String
+  role           Role          @default(USER)
+  createdAt      DateTime      @default(now())
+  country        String?
+  username       String        @unique
+  isBlocked      Boolean       @default(false)
+  badges         Int           @default(0)
+  lastSeenBadges Int           @default(0)
+  campaigns      Campaign[]
+  chats          ChatSession[]
 }
 
 model Campaign {
   id          Int             @id @default(autoincrement())
   title       String
   description String
-
   imageUrl    String?
   videoUrl    String?
- country     String? 
-topics      Json?
-subtopics   Json?
-tools       Json?
-subTools    Json?
-
-startDate DateTime @default(now())
-endDate   DateTime?
-isOngoing Boolean  @default(false)
-
   status      CampaignStatus  @default(PENDING)
   createdAt   DateTime        @default(now())
-
-  createdBy   User?           @relation(fields: [createdById], references: [id], onDelete: SetNull)
   createdById Int?
-
+  subTools    Json?
+  subtopics   Json?
+  topics      Json?
+  tools       Json?
+  country     String?
+  endDate     DateTime?
+  isOngoing   Boolean         @default(false)
+  startDate   DateTime        @default(now())
+  createdBy   User?           @relation(fields: [createdById], references: [id])
   media       CampaignMedia[]
+  referenceType String @default("OWN")
+  references    String?
 }
 
+model Topic {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  createdAt DateTime   @default(now())
+  order     Int        @default(0)
+  subtopics SubTopic[]
+}
 
-// ახალი მოდელი: ბევრზე-ბევრი media თითო კამპანიაზე
+model SubTopic {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  topicId   Int
+  order     Int      @default(0)
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
 
+  @@unique([topicId, name])
+}
+
+model Tool {
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  isActive  Boolean   @default(true)
+  order     Int       @default(0)
+  subTools  SubTool[]
+}
+
+model SubTool {
+  id        Int      @id @default(autoincrement())
+  name      String
+  createdAt DateTime @default(now())
+  toolId    Int
+  order     Int      @default(0)
+  tool      Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@unique([toolId, name])
+}
+
+/// ჩატის სესია (ერთი საუბარი მენტორთან)
+model ChatSession {
+  id          Int           @id @default(autoincrement())
+  userId      Int
+  topicName   String?
+  mentorName  String?
+  toolName    String?
+  subToolName String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  messages    ChatMessage[]
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+/// ერთი მესიჯი ჩატში
+model ChatMessage {
+  id        Int         @id @default(autoincrement())
+  sessionId Int
+  from      ChatSender
+  text      String
+  createdAt DateTime    @default(now())
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model CampaignMedia {
+  id         Int             @id @default(autoincrement())
+  url        String
+  kind       MediaType
+  order      Int             @default(0)
+  createdAt  DateTime        @default(now())
+  campaignId Int
+  sourceType MediaSourceType @default(OWN)
+  sourceUrl  String?
+  campaign   Campaign        @relation(fields: [campaignId], references: [id])
+}
+
+model KnowledgeChunk {
+  id         Int                   @id @default(autoincrement())
+  source     String
+  page       Int?
+  chunkIndex Int
+  content    String
+  embedding  Unsupported("vector")
+  createdAt  DateTime              @default(now())
+
+  @@index([source])
+}
 
 enum Role {
   USER
@@ -65,82 +146,9 @@ enum CampaignStatus {
   REJECTED
 }
 
-// ახალი enum – მედიის ტიპი
 enum MediaType {
   IMAGE
   VIDEO
-}
-model Topic {
-  id        Int        @id @default(autoincrement())
-  name      String     @unique
-   order     Int         @default(0)
-  createdAt DateTime   @default(now())
-
-  subtopics SubTopic[]
-}
-
-model SubTopic {
-  id        Int       @id @default(autoincrement())
-  name      String
-  order   Int    @default(0)
-  createdAt DateTime  @default(now())
-
-  topic     Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  topicId   Int
-
-  @@unique([topicId, name])
-}
-
-model Tool {
-  id        Int        @id @default(autoincrement())
-  name      String     @unique
-   order     Int        @default(0)
-  createdAt DateTime   @default(now())
-  isActive  Boolean    @default(true)
-
-  subTools  SubTool[]
-}
-
-model SubTool {
-  id        Int       @id @default(autoincrement())
-  name      String
-  order  Int   @default(0)
-  createdAt DateTime  @default(now())
-
-  tool      Tool      @relation(fields: [toolId], references: [id], onDelete: Cascade)
-  toolId    Int
-
-  @@unique([toolId, name]) // იგივე ტულში ერთი და იგივე სახელი რომ არ დ_DUPლიკირდეს
-}
-
-/// ჩატის სესია (ერთი საუბარი მენტორთან)
-model ChatSession {
-  id          Int           @id @default(autoincrement())
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      Int
-
-  topicName   String?
-  mentorName  String?
-  toolName    String?
-  subToolName String?
-
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  messages    ChatMessage[]
-
-  @@index([userId, createdAt])
-}
-
-/// ერთი მესიჯი ჩატში
-model ChatMessage {
-  id         Int              @id @default(autoincrement())
-  session    ChatSession      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  sessionId  Int
-
-  from       ChatSender       // USER / BOT / SYSTEM
-  text       String
-  createdAt  DateTime         @default(now())
 }
 
 enum ChatSender {
@@ -148,33 +156,8 @@ enum ChatSender {
   BOT
   SYSTEM
 }
+
 enum MediaSourceType {
   OWN
   EXTERNAL
-}
-
-model CampaignMedia {
-  id         Int         @id @default(autoincrement())
-  url        String
-  kind       MediaType
-  order      Int         @default(0)
-  createdAt  DateTime    @default(now())
-
-  // ✅ NEW: media credit/reference
-  sourceType MediaSourceType @default(OWN)
-  sourceUrl  String?
-
-  campaign   Campaign    @relation(fields: [campaignId], references: [id])
-  campaignId Int
-}
-model KnowledgeChunk {
-  id         Int      @id @default(autoincrement())
-  source     String
-  page       Int?
-  chunkIndex Int
-  content    String   @db.Text
-  embedding  Unsupported("vector(1536)")
-  createdAt  DateTime @default(now())
-
-  @@index([source])
 }

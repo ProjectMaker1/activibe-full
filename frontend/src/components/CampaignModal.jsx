@@ -277,6 +277,39 @@ useEffect(() => {
     </span>
   </div>
 )}
+{/* CONTENT SOURCE (campaign-level) */}
+{campaign.referenceType && (
+  <div className="campaign-modal-details-row">
+    <span className="campaign-modal-details-label">CONTENT SOURCE</span>
+    <span className="campaign-modal-details-value">
+      {campaign.referenceType === 'EXTERNAL' ? (
+        campaign.references ? (
+          (() => {
+            const ref = String(campaign.references).trim();
+            const isLink = /^https?:\/\//i.test(ref);
+            return isLink ? (
+              <a
+                href={ref}
+                target="_blank"
+                rel="noreferrer"
+                className="campaign-modal-credit-link"
+              >
+                View source
+              </a>
+            ) : (
+              <span className="campaign-modal-credit-text">{ref}</span>
+            );
+          })()
+        ) : (
+          <span className="campaign-modal-credit-own">External</span>
+        )
+      ) : (
+        <span className="campaign-modal-credit-own">Own</span>
+      )}
+    </span>
+  </div>
+)}
+
 {/* MEDIA REFERENCES (per media item, Media 1..N) */}
 {mediaSlides.length > 0 && (
   <div className="campaign-modal-details-row">

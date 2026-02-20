@@ -29,22 +29,29 @@ export async function listAllCampaigns() {
 export async function createCampaign(data, user) {
   const status = user.role === 'ADMIN' ? 'APPROVED' : 'PENDING';
 
-  const {
-    title,
-    description,
-    country,
-    topics,
-    subtopics,
-    tools,
-    subTools,
-    startDate,
-    endDate,
-    isOngoing,
-    imageUrl: bodyImageUrl,
-    videoUrl: bodyVideoUrl,
-    media,
-  } = data;
+const {
+  title,
+  description,
+  country,
+  topics,
+  subtopics,
+  tools,
+  subTools,
+  startDate,
+  endDate,
+  isOngoing,
+  imageUrl: bodyImageUrl,
+  videoUrl: bodyVideoUrl,
+  media,
+  referenceType,
+  references,
+} = data;
 
+if (referenceType === 'EXTERNAL' && (!references || !references.trim())) {
+  const err = new Error('Reference is required when source is external');
+  err.status = 400;
+  throw err;
+}
   let imageUrl = bodyImageUrl || null;
   let videoUrl = bodyVideoUrl || null;
 
@@ -74,7 +81,8 @@ export async function createCampaign(data, user) {
       startDate: startDate ? new Date(startDate) : new Date(),
       endDate: isOngoing ? null : (endDate ? new Date(endDate) : null),
       isOngoing: !!isOngoing,
-
+      referenceType: referenceType || 'OWN',
+      references: referenceType === 'EXTERNAL' ? references.trim() : null,
       status,
       createdById: user.id,
 
@@ -135,6 +143,7 @@ export async function setCampaignStatus(id, status) {
       data: { status },
     });
 
+
     if (
       existing.status === 'PENDING' &&
       status === 'APPROVED' &&
@@ -152,6 +161,7 @@ export async function setCampaignStatus(id, status) {
     return updated;
   });
 }
+
 // ერთი კამპანიის წამოღება (სრული მონაცემები edit-ისთვის)
 export async function getCampaignById(id) {
   return prisma.campaign.findUnique({
@@ -201,6 +211,8 @@ export async function updateCampaignAsAdmin(id, data) {
       startDate,
       endDate,
       isOngoing,
+      referenceType,
+      references,
 
       // campaign-level UI controls (UploadPage-დან)
       mediaSourceType,
@@ -209,7 +221,11 @@ export async function updateCampaignAsAdmin(id, data) {
       keepMediaIds,
       newMedia,
     } = data ?? {};
-
+if (referenceType === 'EXTERNAL' && (!references || !references.trim())) {
+  const err = new Error('Reference is required when source is external');
+  err.status = 400;
+  throw err;
+}
     // --- media: determine what to keep ---
     const keepSet = new Set(
       Array.isArray(keepMediaIds) ? keepMediaIds.map((x) => Number(x)) : []
@@ -317,7 +333,13 @@ await Promise.all(
         startDate: startDate ? new Date(startDate) : existing.startDate,
         endDate: isOngoing ? null : endDate ? new Date(endDate) : null,
         isOngoing: !!isOngoing,
-
+referenceType: referenceType || existing.referenceType,
+references:
+  referenceType === 'EXTERNAL'
+    ? references.trim()
+    : referenceType === 'OWN'
+      ? null
+      : existing.references,
         imageUrl: computedImageUrl,
         videoUrl: computedVideoUrl,
       },

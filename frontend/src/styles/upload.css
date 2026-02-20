@@ -171,3 +171,11 @@
   padding: 10px 12px;
   border-radius: 12px;
 }
+.campaign-modal-credit-text{
+  display:inline-block;
+  padding: 6px 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.2;
+}
