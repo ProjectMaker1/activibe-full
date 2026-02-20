@@ -51,14 +51,20 @@ const TOPIC_ICON_MAP = {
 };
 
 const TOPIC_MENTOR_MAP = {
-  'Democracy, Freedom & Governance': 'Václav Havel',
-  'Environmental & Climate Justice': 'Greta Thunberg',
-  "Gender Equality & Women's Empowerment": 'Malala Yousafzai',
-  'Human Rights & Equality': 'Nelson Mandela',
-  'Peace & Anti-War Movements': 'Mahatma Gandhi',
-  'School, University & Education': 'Nelson Mandela',
+  'Democracy, Freedom & Governance': 'Maya - Democracy, Freedom & Governance',
+  'Environmental & Climate Justice': 'Samuel - Environmental & Climate Justice',
+  "Gender Equality & Women's Empowerment": "Vardo - Gender Equality & Women's Empowerment",
+  'Human Rights & Equality': 'Talia - Human Rights & Equality',
+  'Peace & Anti-War Movements': 'Liam - Peace & Anti-War Movements',
+  'School, University & Education': 'Hiro - School, University & Education',
 };
-
+const LEGACY_MENTOR_REMAP = {
+  'Václav Havel': 'Maya - Democracy, Freedom & Governance',
+  'Greta Thunberg': 'Samuel - Environmental & Climate Justice',
+  'Malala Yousafzai': "Vardo - Gender Equality & Women's Empowerment",
+  'Nelson Mandela': 'Talia - Human Rights & Equality',
+  'Mahatma Gandhi': 'Liam - Peace & Anti-War Movements',
+};
 const TOPIC_VIDEO_KEY_MAP = {
   'Democracy, Freedom & Governance': 'Democracy',
   'Environmental & Climate Justice': 'Environmental',
@@ -69,12 +75,14 @@ const TOPIC_VIDEO_KEY_MAP = {
 };
 
 const MENTOR_AVATAR_MAP = {
-  'Václav Havel': '/activists-avatar/Vaclav Havel.jpeg',
-  'Greta Thunberg': '/activists-avatar/Greta Thunberg.webp',
-  'Malala Yousafzai': '/activists-avatar/Malala Yousafzai.webp',
-  'Nelson Mandela': '/activists-avatar/Nelson Mandela.webp',
-  'Mahatma Gandhi': '/activists-avatar/Mahatma Gandhi.webp',
-  'Martin Luther King Jr.': '/activists-avatar/Martin Luther King Jr.webp',
+  'Hiro - School, University & Education': '/activists-avatar/Hiro - School, University & Education.png',
+  'Jorgen - Legislation & Penetration System': '/activists-avatar/Jorgen - Legislation & Penetration System.png',
+  'Liam - Peace & Anti-War Movements': '/activists-avatar/Liam - Peace & Anti-War Movements.png',
+  'Maya - Democracy, Freedom & Governance': '/activists-avatar/Maya - Democracy, Freedom & Governance.png',
+  'Nina - Other': '/activists-avatar/Nina - Other.png',
+  'Samuel - Environmental & Climate Justice': '/activists-avatar/Samuel - Environmental & Climate Justice.png',
+  'Talia - Human Rights & Equality': '/activists-avatar/Talia - Human Rights & Equality.png',
+  "Vardo - Gender Equality & Women's Empowerment": "/activists-avatar/Vardo - Gender Equality & Women's Empowerment.png",
 };
 
 // 🔹 guest ჩატებისთვის localStorage key
@@ -132,15 +140,20 @@ const [welcomeTimeoutId, setWelcomeTimeoutId] = useState(null);
   const [selectedSubToolName, setSelectedSubToolName] = useState('');
 
   /* ---------- Helper: normalize chat from backend ---------- */
-  const normalizeChat = (raw) => ({
+const normalizeChat = (raw) => {
+  const fixedMentor =
+    LEGACY_MENTOR_REMAP[raw.mentorName] || raw.mentorName || 'ActiVibe Assistant';
+
+  return {
     id: raw.id,
     topicName: raw.topicName ?? null,
-    mentorName: raw.mentorName ?? 'ActiVibe Assistant',
+    mentorName: fixedMentor,
     toolName: raw.toolName ?? null,
     subToolName: raw.subToolName ?? null,
     createdAt: raw.createdAt,
     messages: raw.messages || [],
-  });
+  };
+};
 
   /* ---------- topics + tools ჩატვირთვა /categories-დან ---------- */
   useEffect(() => {
@@ -214,14 +227,15 @@ if (serverChats.length > 0) {
         }
         return;
       }
-
 const stored = loadGuestChats();
 if (!cancelled) {
-  setChats(stored);
+  const fixed = stored.map(normalizeChat);
+  setChats(fixed);
+  saveGuestChats(fixed); // ✅ ეს დაამატე
 
-  if (stored.length > 0) {
-    setActiveChatId(stored[0].id);
-    setMode('chat');      // 👉 პირდაპირ ჩატზე
+  if (fixed.length > 0) {
+    setActiveChatId(fixed[0].id);
+    setMode('chat');
   } else {
     setActiveChatId(null);
     setMode('questionnaire');
@@ -242,7 +256,10 @@ if (!cancelled) {
   const selectedTool =
     tools.find((t) => t.id === Number(selectedToolId)) || null;
   const subToolsOptions = selectedTool?.subTools || [];
-
+const visibleTopics = (topics || []);
+// ✅ მარცხენა wheel-ში გამოჩნდეს მხოლოდ ისინი, ვისაც icon mapping აქვს
+// ანუ ახალი კატეგორია ტექსტად დაემატება მარჯვნივ, მაგრამ აიკონად არა
+const wheelTopics = visibleTopics.filter((t) => !!TOPIC_ICON_MAP[t.name]);
   const activeChat = chats.find((c) => c.id === activeChatId) || null;
   // --- Starter prompts (only for Direct to AI / ActiVibe Assistant) ---
 
@@ -672,8 +689,8 @@ if (loading) {
 <section className="page-header">
   <h1 className="chatbot-page-title">How do you want to act today?</h1>
   <p>
-    Talk to a virtual activist mentor and plan safe, non-violent
-    actions.
+    Talk to a virtual mentor and plan safe, non-violent actions.
+
   </p>
 </section>
 
@@ -1001,35 +1018,27 @@ className={`chatbot-chat-message ${
           </p>
 
           <div className="chatbot-layout">
-            {/* Left side – icon grid */}
-            <div className="chatbot-icon-panel">
-              <div className="chatbot-icon-grid">
-                {topics.map((topic) => {
-                  const isActive = topic.id === selectedTopicId;
-                  const icon =
-                    TOPIC_ICON_MAP[topic.name] || '✨';
+<div className="chatbot-icon-panel">
+  <div className="chatbot-icon-grid">
+    {wheelTopics.map((topic) => {
+      const isActive = topic.id === selectedTopicId;
+      const icon = TOPIC_ICON_MAP[topic.name]; // აქ ყოველთვის იქნება
 
-                  return (
-                    <button
-                      key={topic.id}
-                      type="button"
-                      className={`chatbot-icon-circle ${
-                        isActive ? 'active' : ''
-                      }`}
-                      onClick={() => handleSelectTopic(topic.id)}
-                    >
-                      <span className="chatbot-icon-emoji">{icon}</span>
-                    </button>
-                  );
-                })}
-
-                {topics.length === 0 && (
-                  <div className="chatbot-empty-state">
-                    
-                  </div>
-                )}
-              </div>
-            </div>
+      return (
+        <button
+          key={topic.id}
+          type="button"
+          className={`chatbot-icon-circle ${isActive ? 'active' : ''}`}
+          onClick={() => handleSelectTopic(topic.id)}
+          aria-pressed={isActive}
+          title={topic.name}
+        >
+          <span className="chatbot-icon-emoji">{icon}</span>
+        </button>
+      );
+    })}
+  </div>
+</div>
 
             {/* Right side – topic pills */}
             <div className="chatbot-topic-panel">
@@ -1044,26 +1053,22 @@ className={`chatbot-chat-message ${
 
               {!loading && !error && topics.length > 0 && (
                 <>
-                  <div className="chatbot-topic-chips">
-                    {topics.map((topic) => {
-                      const isActive =
-                        topic.id === selectedTopicId;
-                      return (
-                        <button
-                          key={topic.id}
-                          type="button"
-                          className={`chatbot-topic-chip ${
-                            isActive ? 'active' : ''
-                          }`}
-                          onClick={() =>
-                            handleSelectTopic(topic.id)
-                          }
-                        >
-                          {topic.name}
-                        </button>
-                      );
-                    })}
-                  </div>
+<div className="chatbot-topic-chips">
+{visibleTopics.map((topic) => {
+  const isActive = topic.id === selectedTopicId;
+
+  return (
+    <button
+      key={topic.id}
+      type="button"
+      className={`chatbot-topic-chip ${isActive ? 'active' : ''}`}
+      onClick={() => handleSelectTopic(topic.id)}
+    >
+      {topic.name}
+    </button>
+  );
+})}
+</div>
 
                   <div className="chatbot-footer-row">
                     <span className="chatbot-selected-info">

@@ -12,7 +12,10 @@ import AdminPanelPage from './routes/AdminPanelPage.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import IntroLogoOverlay from './components/IntroLogoOverlay.jsx';
-
+import AboutPage from "./routes/AboutPage";
+import ContactPage from "./routes/ContactPage";
+import PrivacyPage from "./routes/PrivacyPage";
+import ScrollToTop from "./components/ScrollToTop.jsx";
 function App() {
   // light / dark theme toggle
   const [theme, setTheme] = useState('light'); // 'light' | 'dark'
@@ -50,12 +53,16 @@ function App() {
         />
 
         <main className="app-main">
+            <ScrollToTop />
+
           <Routes>
             <Route path="/" element={<HomePage theme={theme} />} />
             <Route path="/campaigns" element={<CampaignsPage />} />
             <Route path="/campaigns/:id" element={<CampaignsPage />} />
             <Route path="/chatbot" element={<ChatBotPage />} />
-
+<Route path="/about" element={<AboutPage />} />
+<Route path="/contact" element={<ContactPage />} />
+<Route path="/privacy" element={<PrivacyPage />} />
             <Route
               path="/upload"
               element={

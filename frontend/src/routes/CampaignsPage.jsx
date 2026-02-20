@@ -1,6 +1,5 @@
 // frontend/src/routes/CampaignsPage.jsx
-import React, { useEffect, useMemo, useState } from 'react';
-import CampaignCard from '../components/CampaignCard.jsx';
+import React, { useEffect, useMemo, useState, useRef } from 'react';import CampaignCard from '../components/CampaignCard.jsx';
 import CampaignModal from '../components/CampaignModal.jsx';
 import { apiRequest, withAuth } from '@shared/apiClient.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -34,7 +33,19 @@ function CampaignsPage() {
 
   // pagination
   const [currentPage, setCurrentPage] = useState(1);
+const topRef = useRef(null);
 
+const scrollPageTop = () => {
+  topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  // fallback desktop-ზე
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+
+  const main = document.querySelector(".app-main");
+  if (main) main.scrollTop = 0;
+};
   const countryOptions = useMemo(() => countryList().getData(), []);
 
   // load campaigns
@@ -222,8 +233,9 @@ if (filterTopic) {
     return <Loader />;
   }
 
-  return (
-    <div className="page campaigns-page">
+return (
+  <div className="page campaigns-page">
+    <div ref={topRef} />
       <section className="page-header">
         <h1>Find Your Cause</h1>
         <p>
@@ -337,11 +349,11 @@ if (filterTopic) {
                 <button
                   key={page}
                   type="button"
-                  onClick={() => {
+ onClick={() => {
   setCurrentPage(page);
 
-  // ✅ 100% გარანტიით ზემოთ აისქროლებს
-  window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  requestAnimationFrame(() => scrollPageTop());
+  setTimeout(scrollPageTop, 0);
 }}
 
                   style={{

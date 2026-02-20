@@ -1,6 +1,5 @@
-// frontend/src/routes/HomePage.jsx
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 function HomePage() {
   const navigate = useNavigate();
@@ -10,67 +9,78 @@ function HomePage() {
   };
 
   return (
-    <div className="page home-page">
-      {/* --- HERO ბლოკი --- */}
-      <section className="home-hero-image">
-        <div className="hero-inner">
-          <h1>ActiVibe – Vibe of Activism</h1>
-          <p>
-            Empowering young voices to shape change through creativity,
-            community and peaceful movements.
-          </p>
-        </div>
+    <div className="home-page">
+      <section className="home-hero">
+        {/* EVERYTHING stays within .page width (same as footer) */}
+        <div className="page">
+          {/* 1) Header */}
+          <header className="home-hero-header">
+            <h1>ActiVibe – The Vibe of Activism</h1>
+            <p>Explore campaigns. Connect with activists. Take peaceful action.</p>
+          </header>
 
-        <div className="hero-bottom-row">
-          <button className="loader-wrapper" onClick={handleAiClick}>
-            <span className="loader-text">AI Assistant</span>
-            <div className="loader"></div>
-          </button>
-        </div>
-      </section>
+          {/* 2) Media (separate block, bigger) */}
+<div className="home-hero-media" aria-hidden="true">
+  <img
+    className="home-hero-img home-hero-img--light"
+    src="/hero-light.webp"
+    alt="ActiVibe hero"
+  />
+  <img
+    className="home-hero-img home-hero-img--dark"
+    src="/hero-dark.webp"
+    alt="ActiVibe hero"
+  />
 
-      {/* Why ActiVibe */}
-      <section className="section why">
-        <h2 className="section-title">Why ActiVibe?</h2>
+  {/* ✅ AI bubble ON IMAGE (bottom-right) */}
+  <button
+    type="button"
+    className="loader-wrapper ai-bubble ai-bubble--home"
+    onClick={handleAiClick}
+    aria-label="Open AI Assistant"
+  >
+    <span className="loader-text">AI</span>
+    <div className="loader" />
+  </button>
+</div>
 
-        <div className="why-grid">
-          <div className="why-card">
-            <h3>Explore Global Activism</h3>
-            <p>
-              Discover campaigns from young activists across the globe and be
-              inspired by real non-violent initiatives.
-            </p>
-          </div>
-
-          <div className="why-card">
-            <h3>Share Your Story Safely</h3>
-            <p>
-              Tell the world how you're making a difference — safely and
-              privately.
-            </p>
-          </div>
-
-          <div className="why-card">
-            <h3>AI Chatbot Assistance</h3>
-            <p>
-              Plan actions, find resources and brainstorm ideas with our
-              friendly AI assistant.
-            </p>
-          </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="footer">
-        <div className="footer-inner">
-          <span>© {new Date().getFullYear()} ActiVibe</span>
-          <div className="footer-links">
-            <a href="#about">About Us</a>
-            <a href="#contact">Contact</a>
-            <a href="#privacy">Privacy Policy</a>
+      {/* Rest of the page (same width) */}
+      <div className="page">
+        <section className="section why">
+          <h2 className="section-title">Why ActiVibe?</h2>
+
+          <div className="why-grid">
+            <div className="why-card">
+              <h3>🌍 Discover What Matters</h3>
+              <p>Find peaceful campaigns that match your values and interests.</p>
+            </div>
+
+            <div className="why-card">
+              <h3>💬 Share Your Journey</h3>
+              <p>Tell your story and inspire others — safely and confidently.</p>
+            </div>
+
+            <div className="why-card">
+              <h3>🤖 Turn Ideas into Action</h3>
+              <p>Receive simple, smart suggestions for your next step.</p>
+            </div>
           </div>
-        </div>
-      </footer>
+        </section>
+
+        <footer className="footer">
+          <div className="footer-inner">
+            <span>© {new Date().getFullYear()} ActiVibe</span>
+            <div className="footer-links">
+              <Link to="/about">About Us</Link>
+              <Link to="/contact">Contact</Link>
+              <Link to="/privacy">Privacy Policy</Link>
+            </div>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }

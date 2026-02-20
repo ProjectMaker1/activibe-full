@@ -4,7 +4,9 @@
 *::after {
   box-sizing: border-box;
 }
-
+html, body{
+  overflow-x: hidden;
+}
 :root {
   --bg: #fff3d3;
   --bg-light: #ffffff;
@@ -49,21 +51,13 @@ button {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-
-  /* შენი საიტის ფონი */
   background-color: var(--bg);
-
-  /* hero png როგორც მთლიანი საიტის background */
-  background-image: var(--bg-illustration);
-  background-repeat: no-repeat;
-  background-position: bottom center;
-  background-size: contain;
 }
 
 
 .app-root.theme-light {
   --bg: #fff3d3;                 /* ✅ ან ზუსტად ის ფერი რაც გინდა */
-  --bg-illustration: url('/hero-light.png');
+--bg-illustration: url('/hero-light.webp');
 
   --text-main: #111827;
   --text-muted: #6b7280;
@@ -77,8 +71,7 @@ button {
 /* 🌙 DARK THEME – აქ ვარჩევთ მუქ, მაგრამ still ლამაზ ფერებს */
 .app-root.theme-dark {
   --bg: #3b213d;        /* body ფონიც ამას მიჰყვება */
-  --bg-illustration: url('/hero-dark.png');
-  --text-main: #e5e7eb; /* ძირითადი ტექსტი ღია */
+--bg-illustration: url('/hero-dark.png');  --text-main: #e5e7eb; /* ძირითადი ტექსტი ღია */
   --text-muted: #9ca3af; 
   --primary: #22c55e;   /* მწვანე ღილაკები */
   --primary-dark: #16a34a;
@@ -1669,134 +1662,6 @@ button {
 .home-page > * {
   position: relative;
   z-index: 1;
-}
-/* =========================
-   HOME HERO (FINAL FIX)
-   ========================= */
-
-.home-hero-image{
-  position: relative;
-  overflow: hidden;
-  border-radius: 28px;
-  min-height: 520px;
-  padding: 2.5rem 2.5rem;
-  background: transparent;
-}
-
-/* ტექსტი ზუსტად ცენტრში */
-.home-hero-image .hero-inner{
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;   /* ⬅️ ცენტრიდან ზემოთ */
-  text-align: center;
-  padding: 2.2rem;
-  padding-top: 3.4rem;           /* ⬅️ ნავბარის ქვემოთ ჩამოჯდეს */
-  z-index: 3;
-  pointer-events: none;
-}
-
-
-.home-hero-image .hero-inner h1{
-  margin: 0;
-}
-
-.home-hero-image .hero-inner p{
-  margin: 0.8rem 0 0;
-  max-width: 720px;
-}
-
-/* ქვედა რიგი: მარცხნივ ფოტო (არ იჭრება), მარჯვნივ AI */
-.home-hero-image .hero-bottom-row{
-  position: relative;
-  z-index: 2;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 1.25rem;
-  height: 100%;
-}
-
-/* ფოტო: სრულად ჩანდეს, არ მოიჭრას */
-.home-hero-image .hero-illustration{
-  width: 100%;
-  height: 880px;                 /* ⬅️ აქ გაიზარდა */
-  object-fit: contain;           /* არ მოიჭრება */
-  object-position: left bottom;  /* მარცხნივ იგივე პოზიცია */
-  display: block;
-  pointer-events: none;
-}
-
-
-/* AI ბურთი მარჯვნივ (არ იყოს auto ცენტრი) */
-.home-hero-image .loader-wrapper{
-  margin: 0 !important;
-  justify-self: end;
-  align-self: center;      /* ⬅️ ბოლოდან ცენტრში */
-  z-index: 4;
-
-  transform: translateY(-60px);  /* ⬅️ რამდენითაც გინდა მაღლა */
-}
-
-
-/* ---------- Responsive ---------- */
-@media (max-width: 900px){
-  .home-hero-image{
-    min-height: 560px;
-    padding: 2rem 1.5rem;
-  }
-
-  .home-hero-image .hero-bottom-row{
-    grid-template-columns: 1fr;
-    justify-items: center;
-    align-items: center;
-    gap: 1.25rem;
-  }
-
-  .home-hero-image .hero-illustration{
-    height: 260px;
-    object-position: center;
-  }
-
-  .home-hero-image .loader-wrapper{
-    justify-self: center;
-  }
-}
-
-@media (max-width: 480px){
-  .home-hero-image{
-    min-height: 540px;
-    padding: 1.6rem 1.1rem;
-  }
-
-  .home-hero-image .hero-illustration{
-    height: 220px;
-  }
-}
-
-
-/* loader ბურთი მარჯვნივ, margin:auto არ გვინდა */
-.hero-bottom-row .loader-wrapper {
-  margin: 0;
-}
-
-/* პატარა ეკრანებზე – სვეტებად ქვევით ჩამოწვეს */
-@media (max-width: 900px) {
-  .hero-bottom-row {
-    flex-direction: column;
-    justify-content: center;
-  }
-
-  .hero-illustration {
-    width: 70%;
-    max-width: 360px;
-  }
-
-  .hero-bottom-row .loader-wrapper {
-    margin-top: 1.5rem;
-  }
 }
 /* ---------- ChatBot Q1 layout ---------- */
 
@@ -3818,3 +3683,178 @@ button {
   border-color: rgba(255, 255, 255, 0.10);
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
 }
+.static-page {
+  padding: 60px 20px;
+  background: #f9fafc;
+  min-height: 100vh;
+}
+
+.static-page .container {
+  max-width: 900px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+.static-page h1 {
+  margin-bottom: 20px;
+}
+
+.static-page h2 {
+  margin-top: 30px;
+}
+/* =======================
+/* =========================
+   HOME — CLEAN, FIXED WIDTH, RESPONSIVE
+   - No horizontal overflow
+   - Hero matches .page/footer width
+   - Bigger hero image
+   - AI bubble is independent (not tied to image)
+   ========================= */
+
+html, body{
+  overflow-x: hidden;
+}
+
+.home-page{
+  min-height: calc(100vh - 72px);
+  display: flex;
+  flex-direction: column;
+}
+
+.home-hero{
+  width: 100%;
+}
+
+/* ---------- HERO HEADER ---------- */
+.home-hero-header{
+  text-align: center;
+  padding-top: 1.6rem;
+  padding-bottom: 1.1rem;
+}
+
+.home-hero-header h1{
+  margin: 0;
+  font-size: clamp(2.1rem, 3.4vw, 3.3rem);
+  line-height: 1.08;
+}
+
+.home-hero-header p{
+  margin: 0.7rem auto 0;
+  max-width: 62ch;
+  color: var(--text-muted);
+  font-size: clamp(0.98rem, 1.25vw, 1.08rem);
+}
+
+/* ---------- HERO MEDIA (BIGGER) ---------- */
+/* NOTE: width is 100% inside .page => matches footer width */
+.home-hero-media{
+  width: 100%;
+  height: clamp(420px, 56vh, 760px); /* ✅ bigger than before */
+  border-radius: 18px;
+  overflow: hidden;
+  background: transparent; /* ✅ no dark side background */
+  position: relative;
+}
+
+/* Make the image LOOK BIGGER:
+   - cover = fills box, may crop edges a bit (looks strong/pro)
+   - if you want zero crop, change cover -> contain
+*/
+.home-hero-img{
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;       /* ✅ big + premium look */
+  object-position: center;
+}
+
+/* Theme switch */
+.home-hero-img--light{ display: block; }
+.home-hero-img--dark{ display: none; }
+
+.app-root.theme-dark .home-hero-img--light{ display: none; }
+.app-root.theme-dark .home-hero-img--dark{ display: block; }
+
+/* ---------- HERO ACTIONS (AI bubble independent) ---------- */
+.home-hero-actions{
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 14px;
+}
+
+/* Home-only bubble sizing (doesn't affect other loader-wrapper usage) */
+.ai-bubble--home{
+  width: 92px;
+  height: 92px;
+  margin: 0 !important;      /* kill your loader-wrapper margin auto */
+  font-size: 0.95rem;
+  border-radius: 999px;
+
+  /* readable + premium */
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.18);
+}
+
+.app-root.theme-dark .ai-bubble--home{
+  background: rgba(2, 6, 23, 0.35);
+}
+
+.ai-bubble--home .loader{
+  border-radius: 999px;
+}
+
+.ai-bubble--home .loader-text{
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.ai-bubble--home:hover{
+  transform: translateY(-2px);
+  transition: 0.18s ease;
+}
+
+/* ---------- Responsive tweaks ---------- */
+@media (max-width: 768px){
+  .home-hero-header{
+    padding-top: 1.2rem;
+    padding-bottom: 0.9rem;
+  }
+
+  .home-hero-media{
+    height: clamp(320px, 44vh, 520px);
+    border-radius: 16px;
+  }
+
+  .home-hero-actions{
+    justify-content: center; /* ✅ mobile-ზე ცენტრში */
+    padding-top: 12px;
+  }
+
+  .ai-bubble--home{
+    width: 78px;
+    height: 78px;
+    font-size: 0.88rem;
+  }
+}
+
+@media (max-width: 420px){
+  .home-hero-media{
+    height: clamp(300px, 50vh, 560px);
+  }
+}/* ✅ place AI bubble over the hero image */
+.ai-bubble--home{
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 10;
+}
+
+/* optional: smaller offsets on mobile */
+@media (max-width: 768px){
+  .ai-bubble--home{
+    right: 12px;
+    bottom: 12px;
+  }
+}
+.app-main { scroll-behavior: auto; }
