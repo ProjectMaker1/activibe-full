@@ -18,11 +18,16 @@ export async function authRequired(req, res, next) {
       return res.status(401).json({ message: 'User not found' });
     }
 
-    req.user = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    };
+req.user = {
+  id: user.id,
+  email: user.email,
+  role: user.role,
+  username: user.username,
+  country: user.country,
+  isBlocked: user.isBlocked,
+  badges: user.badges,
+  lastSeenBadges: user.lastSeenBadges,
+};
 
     next();
   } catch (err) {
