@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-
+import Portal from "./Portal.jsx";
 function Navbar({ theme, onToggleTheme, introActive }) {
   const {
     isAuthenticated,
@@ -202,10 +202,11 @@ function Navbar({ theme, onToggleTheme, introActive }) {
         </div>
       </div>
 
-      {/* Badge modal */}
-      {showBadgeModal && isAuthenticated && (
-        <div className="badge-modal-backdrop">
-          <div className="badge-modal">
+<Portal>
+  {/* Badge modal */}
+  {showBadgeModal && isAuthenticated && (
+    <div className="badge-modal-backdrop">
+      <div className="badge-modal">
             <div className="badge-modal-icon-wrap">
               <img src="/badge.png" alt="Badge" className="badge-modal-icon" />
             </div>
@@ -227,10 +228,10 @@ function Navbar({ theme, onToggleTheme, introActive }) {
         </div>
       )}
 
-      {/* iOS Install instructions */}
-      {showIosInstall && (
-        <div className="badge-modal-backdrop" onClick={() => setShowIosInstall(false)}>
-          <div className="badge-modal" onClick={(e) => e.stopPropagation()}>
+  {/* iOS Install instructions */}
+  {showIosInstall && (
+    <div className="badge-modal-backdrop" onClick={() => setShowIosInstall(false)}>
+      <div className="badge-modal" onClick={(e) => e.stopPropagation()}>
             <h2 className="badge-modal-title">Install ActiVibe</h2>
             <p className="badge-modal-text">To install on iPhone/iPad:</p>
 
@@ -256,6 +257,7 @@ function Navbar({ theme, onToggleTheme, introActive }) {
           </div>
         </div>
       )}
+      </Portal>
     </header>
   );
 }

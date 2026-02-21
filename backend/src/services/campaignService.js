@@ -1,6 +1,9 @@
 // backend/src/services/campaignService.js
 import { prisma } from '../config/prisma.js';
-
+import {
+  sendNewCampaignToSupport,
+  sendCampaignDecisionToUser,
+} from './emailService.js';
 // მხოლოდ APPROVED კამპანიები (public გვერდისთვის)
 export async function listApprovedCampaigns() {
   return prisma.campaign.findMany({
@@ -25,33 +28,33 @@ export async function listAllCampaigns() {
   });
 }
 
-// ახალი კამპანიის შექმნა
 export async function createCampaign(data, user) {
   const status = user.role === 'ADMIN' ? 'APPROVED' : 'PENDING';
 
-const {
-  title,
-  description,
-  country,
-  topics,
-  subtopics,
-  tools,
-  subTools,
-  startDate,
-  endDate,
-  isOngoing,
-  imageUrl: bodyImageUrl,
-  videoUrl: bodyVideoUrl,
-  media,
-  referenceType,
-  references,
-} = data;
+  const {
+    title,
+    description,
+    country,
+    topics,
+    subtopics,
+    tools,
+    subTools,
+    startDate,
+    endDate,
+    isOngoing,
+    imageUrl: bodyImageUrl,
+    videoUrl: bodyVideoUrl,
+    media,
+    referenceType,
+    references,
+  } = data;
 
-if (referenceType === 'EXTERNAL' && (!references || !references.trim())) {
-  const err = new Error('Reference is required when source is external');
-  err.status = 400;
-  throw err;
-}
+  if (referenceType === 'EXTERNAL' && (!references || !references.trim())) {
+    const err = new Error('Reference is required when source is external');
+    err.status = 400;
+    throw err;
+  }
+
   let imageUrl = bodyImageUrl || null;
   let videoUrl = bodyVideoUrl || null;
 
@@ -65,19 +68,17 @@ if (referenceType === 'EXTERNAL' && (!references || !references.trim())) {
     if (firstVideo) videoUrl = firstVideo.url;
   }
 
-  return prisma.campaign.create({
+  const created = await prisma.campaign.create({
     data: {
       title,
       description,
       imageUrl,
       videoUrl,
       country: country || null,
-
       topics: Array.isArray(topics) ? topics : [],
       subtopics: Array.isArray(subtopics) ? subtopics : [],
       tools: Array.isArray(tools) ? tools : [],
       subTools: Array.isArray(subTools) ? subTools : [],
-
       startDate: startDate ? new Date(startDate) : new Date(),
       endDate: isOngoing ? null : (endDate ? new Date(endDate) : null),
       isOngoing: !!isOngoing,
@@ -85,7 +86,6 @@ if (referenceType === 'EXTERNAL' && (!references || !references.trim())) {
       references: referenceType === 'EXTERNAL' ? references.trim() : null,
       status,
       createdById: user.id,
-
       media:
         Array.isArray(media) && media.length
           ? {
@@ -93,8 +93,6 @@ if (referenceType === 'EXTERNAL' && (!references || !references.trim())) {
                 url: m.url,
                 kind: m.kind,
                 order: m.order ?? index,
-
-                // ✅ NEW — media source მხარდაჭერა
                 sourceType: m.sourceType || 'OWN',
                 sourceUrl: m.sourceUrl || null,
               })),
@@ -105,6 +103,17 @@ if (referenceType === 'EXTERNAL' && (!references || !references.trim())) {
       media: { orderBy: { order: 'asc' } },
     },
   });
+  // 📧 Support email მხოლოდ PENDING-ზე
+  if (created.status === 'PENDING') {
+sendNewCampaignToSupport({
+  campaignId: created.id,
+  title: created.title,
+  country: created.country,     // e.g. "GE"
+  topics: created.topics,       // array
+}).catch((e) => console.error('email error (support notify):', e));
+  }
+
+  return created;
 }
 
 // Campaign + media deletion
@@ -120,14 +129,14 @@ export async function deleteCampaign(id) {
   });
 }
 
-// სტატუსის შეცვლა + ბეიჯის მინიჭება
 export async function setCampaignStatus(id, status) {
-  return prisma.$transaction(async (tx) => {
+  // 1) DB update ტრანზაქციით (იგივე ლოგიკა)
+  const result = await prisma.$transaction(async (tx) => {
     const existing = await tx.campaign.findUnique({
       where: { id },
       include: {
         createdBy: {
-          select: { id: true, role: true },
+          select: { id: true, role: true, email: true, badges: true },
         },
       },
     });
@@ -143,6 +152,8 @@ export async function setCampaignStatus(id, status) {
       data: { status },
     });
 
+    // badges increment მხოლოდ იმ შემთხვევაში, რაც აქამდე გქონდა
+    let badgesAfter = existing?.createdBy?.badges ?? null;
 
     if (
       existing.status === 'PENDING' &&
@@ -150,16 +161,54 @@ export async function setCampaignStatus(id, status) {
       existing.createdBy &&
       existing.createdBy.role !== 'ADMIN'
     ) {
-      await tx.user.update({
+      const u = await tx.user.update({
         where: { id: existing.createdBy.id },
-        data: {
-          badges: { increment: 1 },
-        },
+        data: { badges: { increment: 1 } },
+        select: { badges: true },
       });
+      badgesAfter = u.badges;
     }
 
-    return updated;
+    return { existing, updated, badgesAfter };
   });
+
+  // 2) Email ტრანზაქციის გარეთ
+  const { existing, updated, badgesAfter } = result;
+
+  console.log('DECISION EMAIL DEBUG', {
+    to: existing?.createdBy?.email,
+    role: existing?.createdBy?.role,
+    status,
+    campaignId: updated?.id,
+    title: updated?.title,
+    badgesAfter,
+  });
+
+  // user-ს ვწერთ მხოლოდ მაშინ, როცა ADMIN-ის campaign არ არის და აქვს email
+  if (existing?.createdBy?.role !== 'ADMIN' && existing?.createdBy?.email) {
+    if (status === 'APPROVED' || status === 'REJECTED') {
+      sendCampaignDecisionToUser({
+        toEmail: existing.createdBy.email,
+        campaignId: updated.id,
+        title: updated.title,
+        status,
+        badges: badgesAfter, // ✅ badge count გადადის email-ში
+      })
+        .then((r) => console.log('decision email sent:', r))
+        .catch((e) => {
+          console.error('email error (user decision):', e?.message || e);
+          console.error('full error:', e);
+        });
+    }
+  } else {
+    console.log('DECISION EMAIL SKIPPED (no recipient)', {
+      hasCreatedBy: !!existing?.createdBy,
+      role: existing?.createdBy?.role,
+      email: existing?.createdBy?.email,
+    });
+  }
+
+  return updated;
 }
 
 // ერთი კამპანიის წამოღება (სრული მონაცემები edit-ისთვის)
