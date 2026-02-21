@@ -2005,8 +2005,9 @@ button {
 .mentor-video {
   display: block;
   width: 100%;
-  height: 180px;
-  object-fit: cover;
+  height: 180px;        /* შეგიძლია დატოვო */
+  object-fit: contain;  /* ✅ აღარ მოიჭრება */
+  background: #000;     /* ✅ რომ დარჩენილი სივრცე ლამაზად გამოჩნდეს */
 }
 
 .mentor-text h3 {
