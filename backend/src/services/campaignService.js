@@ -4,6 +4,7 @@ import {
   sendNewCampaignToSupport,
   sendCampaignDecisionToUser,
 } from './emailService.js';
+
 // მხოლოდ APPROVED კამპანიები (public გვერდისთვის)
 export async function listApprovedCampaigns() {
   return prisma.campaign.findMany({
@@ -103,14 +104,15 @@ export async function createCampaign(data, user) {
       media: { orderBy: { order: 'asc' } },
     },
   });
+
   // 📧 Support email მხოლოდ PENDING-ზე
   if (created.status === 'PENDING') {
-sendNewCampaignToSupport({
-  campaignId: created.id,
-  title: created.title,
-  country: created.country,     // e.g. "GE"
-  topics: created.topics,       // array
-}).catch((e) => console.error('email error (support notify):', e));
+    sendNewCampaignToSupport({
+      campaignId: created.id,
+      title: created.title,
+      country: created.country, // e.g. "GE"
+      topics: created.topics, // array
+    }).catch((e) => console.error('email error (support notify):', e));
   }
 
   return created;
@@ -170,6 +172,15 @@ export async function setCampaignStatus(id, status) {
     }
 
     return { existing, updated, badgesAfter };
+  });
+
+  // ✅ სწორი ადგილი: result უკვე არსებობს აქ
+  console.log('DECISION RECIPIENT', {
+    id,
+    status,
+    email: result?.existing?.createdBy?.email,
+    role: result?.existing?.createdBy?.role,
+    hasCreatedBy: !!result?.existing?.createdBy,
   });
 
   // 2) Email ტრანზაქციის გარეთ
@@ -270,11 +281,13 @@ export async function updateCampaignAsAdmin(id, data) {
       keepMediaIds,
       newMedia,
     } = data ?? {};
-if (referenceType === 'EXTERNAL' && (!references || !references.trim())) {
-  const err = new Error('Reference is required when source is external');
-  err.status = 400;
-  throw err;
-}
+
+    if (referenceType === 'EXTERNAL' && (!references || !references.trim())) {
+      const err = new Error('Reference is required when source is external');
+      err.status = 400;
+      throw err;
+    }
+
     // --- media: determine what to keep ---
     const keepSet = new Set(
       Array.isArray(keepMediaIds) ? keepMediaIds.map((x) => Number(x)) : []
@@ -334,23 +347,23 @@ if (referenceType === 'EXTERNAL' && (!references || !references.trim())) {
 
     // update order for kept media sequentially 0..N-1
     // (საინტერესოა: თუ keepSet ცარიელია, keptMedia ცარიელია და არაფერი კეთდება)
-await Promise.all(
-  keptMedia.map((m, index) =>
-    tx.campaignMedia.update({
-      where: { id: m.id },
-      data: {
-        order: index,
-        ...(overrideSourceType
-          ? {
-              sourceType: overrideSourceType,
-              sourceUrl: overrideSourceType === 'EXTERNAL' ? overrideSourceUrl : null,
-            }
-          : {}),
-      },
-    })
-  )
-);
-
+    await Promise.all(
+      keptMedia.map((m, index) =>
+        tx.campaignMedia.update({
+          where: { id: m.id },
+          data: {
+            order: index,
+            ...(overrideSourceType
+              ? {
+                  sourceType: overrideSourceType,
+                  sourceUrl:
+                    overrideSourceType === 'EXTERNAL' ? overrideSourceUrl : null,
+                }
+              : {}),
+          },
+        })
+      )
+    );
 
     // fetch full media after changes
     const finalMedia = await tx.campaignMedia.findMany({
@@ -382,13 +395,13 @@ await Promise.all(
         startDate: startDate ? new Date(startDate) : existing.startDate,
         endDate: isOngoing ? null : endDate ? new Date(endDate) : null,
         isOngoing: !!isOngoing,
-referenceType: referenceType || existing.referenceType,
-references:
-  referenceType === 'EXTERNAL'
-    ? references.trim()
-    : referenceType === 'OWN'
-      ? null
-      : existing.references,
+        referenceType: referenceType || existing.referenceType,
+        references:
+          referenceType === 'EXTERNAL'
+            ? references.trim()
+            : referenceType === 'OWN'
+              ? null
+              : existing.references,
         imageUrl: computedImageUrl,
         videoUrl: computedVideoUrl,
       },
