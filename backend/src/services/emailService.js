@@ -16,13 +16,15 @@ function mustEnv(v, name) {
 }
 
 export function buildAdminRequestsLink(campaignId) {
-  return `${FRONTEND_URL}/admin?tab=requests&campaignId=${encodeURIComponent(
-    String(campaignId)
-  )}`;
+  return `${FRONTEND_URL}/admin?tab=requests&campaignId=${encodeURIComponent(String(campaignId))}`;
 }
 
 export function buildCampaignModalLink(campaignId) {
   return `${FRONTEND_URL}/campaigns?open=${encodeURIComponent(String(campaignId))}`;
+}
+
+export function buildCampaignsListLink() {
+  return `${FRONTEND_URL}/campaigns`;
 }
 
 /* -------------------- Presentation helpers -------------------- */
@@ -37,7 +39,6 @@ function escapeHtml(str) {
 }
 
 function toFlagEmoji(countryCode) {
-  // expects ISO 3166-1 alpha-2 (e.g. "GE", "US")
   const cc = String(countryCode || '').trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(cc)) return '';
   const A = 0x1f1e6;
@@ -49,7 +50,6 @@ function countryName(countryCode, locale = 'en') {
   const cc = String(countryCode || '').trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(cc)) return '';
   try {
-    // Node 18+ supports Intl.DisplayNames in most environments
     const dn = new Intl.DisplayNames([locale], { type: 'region' });
     return dn.of(cc) || '';
   } catch {
@@ -58,13 +58,9 @@ function countryName(countryCode, locale = 'en') {
 }
 
 function normalizeTopics(topics) {
-  // topics can be array of strings; remove empties, dedupe, limit
   if (!Array.isArray(topics)) return [];
-  const cleaned = topics
-    .map((x) => String(x || '').trim())
-    .filter(Boolean);
+  const cleaned = topics.map((x) => String(x || '').trim()).filter(Boolean);
 
-  // dedupe, keep order
   const seen = new Set();
   const uniq = [];
   for (const t of cleaned) {
@@ -74,7 +70,7 @@ function normalizeTopics(topics) {
       uniq.push(t);
     }
   }
-  return uniq.slice(0, 8); // keep email tidy
+  return uniq.slice(0, 8);
 }
 
 function renderPills(items) {
@@ -102,7 +98,6 @@ function renderPills(items) {
 }
 
 function shell({ title, subtitle, contentHtml, cta }) {
-  // simple responsive-ish email layout (no external CSS)
   const brand = 'ActiVibe';
   const primary = '#0c7b61';
   const bg = '#F6F7FB';
@@ -112,9 +107,8 @@ function shell({ title, subtitle, contentHtml, cta }) {
   return `
   <div style="background:${bg}; padding:28px 0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; color:#0F172A;">
     <div style="max-width:640px; margin:0 auto; padding:0 16px;">
-      
-      <div style="margin-bottom:14px; display:flex; align-items:center; gap:10px;">
 
+      <div style="margin-bottom:14px; display:flex; align-items:center; gap:10px;">
         <div>
           <div style="font-weight:800; font-size:14px; line-height:1.1;">${brand}</div>
           <div style="color:${muted}; font-size:12px;">Vibe of Activism</div>
@@ -129,9 +123,7 @@ function shell({ title, subtitle, contentHtml, cta }) {
         overflow:hidden;
       ">
         <div style="padding:20px 20px 10px;">
-          <div style="font-size:18px; font-weight:800; margin:0 0 6px;">${escapeHtml(
-            title
-          )}</div>
+          <div style="font-size:18px; font-weight:800; margin:0 0 6px;">${escapeHtml(title)}</div>
           ${
             subtitle
               ? `<div style="color:${muted}; font-size:13px; margin:0 0 12px;">${escapeHtml(
@@ -195,6 +187,20 @@ function keyValueRow(label, value) {
   `;
 }
 
+function heroImage(src, alt = 'ActiVibe') {
+  if (!src) return '';
+  return `
+    <div style="padding:0 20px 16px;">
+      <img
+        src="${src}"
+        alt="${escapeHtml(alt)}"
+        width="600"
+        style="max-width:100%; height:auto; display:block; border-radius:14px; border:1px solid #E2E8F0;"
+      />
+    </div>
+  `;
+}
+
 /* -------------------- Emails -------------------- */
 
 export async function sendNewCampaignToSupport({ campaignId, title, country, topics }) {
@@ -203,15 +209,15 @@ export async function sendNewCampaignToSupport({ campaignId, title, country, top
   const link = buildAdminRequestsLink(campaignId);
 
   const flag = toFlagEmoji(country);
-  const cname = countryName(country, 'en'); // can switch to 'ka' later if you want
+  const cname = countryName(country, 'en');
   const topicPills = renderPills(normalizeTopics(topics));
-const topicsRow =
-  topicPills
+  const topicsRow = topicPills
     ? `<div style="display:flex; gap:10px; margin:6px 0; align-items:flex-start;">
          <div style="min-width:92px; color:#64748B; font-size:13px;">Topics</div>
          <div>${topicPills}</div>
        </div>`
     : '';
+
   const subtitle = `A new campaign is waiting for review`;
 
   const contentHtml = `
@@ -219,11 +225,14 @@ const topicsRow =
       ${keyValueRow('Campaign ID', String(campaignId))}
       ${title ? keyValueRow('Title', title) : ''}
       ${country ? keyValueRow('Country', `${flag ? flag + ' ' : ''}${cname || country}`) : ''}
-${topicsRow}    </div>
+      ${topicsRow}
+    </div>
   `;
 
   const subjectTitle = title ? title : `#${campaignId}`;
-  const subjectCountry = country ? ` • ${toFlagEmoji(country) || ''}${countryName(country, 'en') ? ` ${countryName(country, 'en')}` : ''}` : '';
+  const subjectCountry = country
+    ? ` • ${toFlagEmoji(country) || ''}${countryName(country, 'en') ? ` ${countryName(country, 'en')}` : ''}`
+    : '';
   const subject = `New campaign submission: ${subjectTitle}${subjectCountry}`;
 
   const html = shell({
@@ -258,23 +267,78 @@ ${topicsRow}    </div>
   });
 }
 
-export async function sendCampaignDecisionToUser({ toEmail, campaignId, title, status }) {
+export async function sendCampaignDecisionToUser({
+  toEmail,
+  campaignId,
+  title,
+  status,
+  badges,
+}) {
   mustEnv(process.env.RESEND_API_KEY, 'RESEND_API_KEY');
 
-  const link = buildCampaignModalLink(campaignId);
+  const isApproved = status === 'APPROVED';
+  const isRejected = status === 'REJECTED';
 
-  const pretty =
-    status === 'APPROVED'
-      ? 'Approved ✅'
-      : status === 'REJECTED'
-      ? 'Rejected ❌'
-      : String(status || 'Updated');
+  const campaignLink = buildCampaignModalLink(campaignId);
+  const campaignsListLink = buildCampaignsListLink();
 
-  const subtitle = `Your campaign has been reviewed`;
+  // ✅ badge image from your frontend public folder
+  const badgeImgUrl = `${FRONTEND_URL}/badge.png`;
 
-  const contentHtml = `
+  const subject = isApproved
+    ? 'Your campaign has been approved'
+    : isRejected
+    ? 'Your campaign has been rejected'
+    : 'Campaign update';
+
+  const subtitle = isApproved
+    ? 'Thank you for contributing to ActiVibe.'
+    : isRejected
+    ? 'Thank you for your submission.'
+    : 'Your campaign has been reviewed.';
+
+  const badgesLine =
+    typeof badges === 'number'
+      ? `<div style="margin-top:10px; color:#0F172A; font-size:13px;">
+           You now have <strong>${badges}</strong> badge${badges === 1 ? '' : 's'}.
+         </div>`
+      : '';
+
+  const rejectHelp = `
+    <div style="margin-top:10px; color:#64748B; font-size:13px;">
+      If you’d like to understand the reason, please contact us at
+      <a href="mailto:${SUPPORT_EMAIL}" style="color:#0c7b61; font-weight:700; text-decoration:none;">
+        ${SUPPORT_EMAIL}
+      </a>.
+    </div>
+  `;
+
+  const approvedBody = `
+    ${heroImage(badgeImgUrl, 'Badge')}
     <div style="padding:14px 16px; border:1px solid #E2E8F0; border-radius:14px; background:#F8FAFC;">
-      ${keyValueRow('Status', pretty)}
+      ${keyValueRow('Status', 'Approved')}
+      ${keyValueRow('Campaign', title || `#${campaignId}`)}
+      <div style="margin-top:10px; color:#64748B; font-size:13px;">
+        Your campaign is now visible on ActiVibe. You can open it using the button below.
+      </div>
+      ${badgesLine}
+    </div>
+  `;
+
+  const rejectedBody = `
+    <div style="padding:14px 16px; border:1px solid #E2E8F0; border-radius:14px; background:#F8FAFC;">
+      ${keyValueRow('Status', 'Rejected')}
+      ${keyValueRow('Campaign', title || `#${campaignId}`)}
+      <div style="margin-top:10px; color:#64748B; font-size:13px;">
+        Unfortunately, we’re not able to publish this campaign at this time.
+      </div>
+      ${rejectHelp}
+    </div>
+  `;
+
+  const contentHtml = isApproved ? approvedBody : isRejected ? rejectedBody : `
+    <div style="padding:14px 16px; border:1px solid #E2E8F0; border-radius:14px; background:#F8FAFC;">
+      ${keyValueRow('Status', String(status || 'Updated'))}
       ${keyValueRow('Campaign', title || `#${campaignId}`)}
       <div style="margin-top:10px; color:#64748B; font-size:13px;">
         You can open the campaign using the button below.
@@ -282,21 +346,32 @@ export async function sendCampaignDecisionToUser({ toEmail, campaignId, title, s
     </div>
   `;
 
+  const cta = isRejected
+    ? { href: campaignsListLink, label: 'View Campaigns' }
+    : { href: campaignLink, label: 'View campaign' };
+
   const html = shell({
-    title: 'Campaign update',
+    title: isApproved ? 'Campaign approved' : isRejected ? 'Campaign rejected' : 'Campaign update',
     subtitle,
     contentHtml,
-    cta: {
-      href: link,
-      label: 'View campaign',
-    },
+    cta,
   });
+
+  const textLines = [
+    isApproved ? 'Your campaign has been approved.' : isRejected ? 'Your campaign has been rejected.' : 'Your campaign has been updated.',
+    `Campaign: ${title || `#${campaignId}`}`,
+    typeof badges === 'number' && isApproved ? `You now have ${badges} badge${badges === 1 ? '' : 's'}.` : null,
+    isRejected ? `For the reason, contact: ${SUPPORT_EMAIL}` : null,
+    '',
+    isRejected ? `View campaigns:` : `Open:`,
+    isRejected ? campaignsListLink : campaignLink,
+  ].filter(Boolean);
 
   return resend.emails.send({
     from: `ActiVibe <${FROM_EMAIL}>`,
     to: [toEmail],
-    subject: `Your campaign was ${pretty}`,
-    text: `Your campaign was ${pretty}.\n\nCampaign: ${title || `#${campaignId}`}\nOpen:\n${link}\n`,
+    subject,
+    text: textLines.join('\n'),
     html,
   });
 }

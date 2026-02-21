@@ -103,7 +103,35 @@ export function AuthProvider({ children }) {
     setTokens({ accessToken: null, refreshToken: null });
     setHasNewBadge(false);
   };
+const refreshMe = async () => {
+  if (!tokens.accessToken) return;
 
+  try {
+    const res = await apiRequest('/auth/me', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${tokens.accessToken}`,
+      },
+    });
+
+    if (res?.user) {
+      setUser(res.user);
+
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        parsed.user = res.user;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      }
+    }
+  } catch (err) {
+    console.error('Failed to refresh user', err);
+  }
+};
+useEffect(() => {
+  if (tokens.accessToken) refreshMe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [tokens.accessToken]);
   // როცა იუზერი დახურავს დიდ ბეიჯის მოდალს
   const markBadgesSeen = async () => {
     if (!tokens.accessToken) return;
@@ -141,18 +169,19 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const value = {
-    user,
-    tokens,
-    loading,
-    login,
-    signup,
-    logout,
-    isAuthenticated: !!user,
-    isAdmin: user?.role === 'ADMIN',
-    hasNewBadge,      // 👉 frontend-სთვის flag
-    markBadgesSeen,   // 👉 მოდალის დახურვის დროს გამოსაყენებელი
-  };
+const value = {
+  user,
+  tokens,
+  loading,
+  login,
+  signup,
+  logout,
+  refreshMe,
+  isAuthenticated: !!user,
+  isAdmin: user?.role === 'ADMIN',
+  hasNewBadge,
+  markBadgesSeen,
+};
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
