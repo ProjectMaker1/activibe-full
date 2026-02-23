@@ -279,6 +279,20 @@ export async function refreshTokens(refreshToken) {
 export async function requestPasswordReset({ email }) {
   const user = await prisma.user.findUnique({ where: { email } });
 
+  // ✅ If email not found -> DON'T send email
+  if (!user) {
+    const err = new Error('No verified account found with this email address.');
+    err.status = 404;
+    throw err;
+  }
+
+  // ✅ If not verified -> DON'T send email
+  if (user.isEmailVerified === false) {
+    const err = new Error('This email address is not verified.');
+    err.status = 400;
+    throw err;
+  }
+
   if (user.isBlocked) {
     const err = new Error('Your account is blocked');
     err.status = 403;
@@ -296,6 +310,7 @@ export async function requestPasswordReset({ email }) {
       throw err;
     }
 
+    // ✅ limit resends (and requests) by resendCount
     if (existing.resendCount >= 8) {
       const err = new Error('Too many resend requests. Please try again later.');
       err.status = 429;
@@ -313,7 +328,7 @@ export async function requestPasswordReset({ email }) {
       codeHash,
       codeExpiresAt: expiresAt,
       attempts: 0,
-      resendCount: existing ? existing.resendCount : 0,
+      resendCount: { increment: 1 },
       lastSentAt: new Date(),
     },
     create: {
