@@ -354,7 +354,7 @@ export async function resendPasswordReset({ email }) {
   const user = await prisma.user.findUnique({ where: { email } });
 
   if (!user) {
-    const err = new Error('No verified account found with this email address.');
+    const err = new Error('No account found with this email address.');
     err.status = 404;
     throw err;
   }
@@ -366,7 +366,7 @@ export async function resendPasswordReset({ email }) {
   }
 
   if (user.isBlocked) {
-    const err = new Error('Your account is blocked');
+    const err = new Error('Your account is blocked.');
     err.status = 403;
     throw err;
   }
@@ -375,8 +375,9 @@ export async function resendPasswordReset({ email }) {
 
   if (existing) {
     const secondsSinceLast = (Date.now() - existing.lastSentAt.getTime()) / 1000;
+
     if (secondsSinceLast < 30) {
-      const err = new Error('Please wait before requesting a new code');
+      const err = new Error('Please wait before requesting a new code.');
       err.status = 429;
       throw err;
     }
