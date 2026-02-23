@@ -1,5 +1,6 @@
 // frontend/src/routes/CampaignsPage.jsx
-import React, { useEffect, useMemo, useState, useRef } from 'react';import CampaignCard from '../components/CampaignCard.jsx';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+import CampaignCard from '../components/CampaignCard.jsx';
 import CampaignModal from '../components/CampaignModal.jsx';
 import { apiRequest, withAuth } from '@shared/apiClient.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -26,7 +27,9 @@ function CampaignsPage() {
   const [filterCountry, setFilterCountry] = useState(null); // { value, label } ან null
   const [filterTopic, setFilterTopic] = useState('');
   const [filterTool, setFilterTool] = useState('');
-
+  // year range filter
+  const [filterYearFrom, setFilterYearFrom] = useState('');
+const [filterYearTo, setFilterYearTo] = useState(String(new Date().getFullYear()));
   // categories data (topics + tools)
   const [topics, setTopics] = useState([]);
   const [tools, setTools] = useState([]);
@@ -47,7 +50,22 @@ const scrollPageTop = () => {
   if (main) main.scrollTop = 0;
 };
 const countryOptions = useMemo(() => getCampaignCountries(), []);
-  // load campaigns
+  const currentYear = new Date().getFullYear();
+
+  // Build year options based on campaigns' startDate (fallback to createdAt).
+  // Always includes currentYear (so next year will appear automatically).
+  const yearOptions = useMemo(() => {
+    const years = new Set([currentYear]);
+
+    (campaigns || []).forEach((c) => {
+const raw = c?.startDate ?? c?.createdAt ?? null;
+const d = raw ? new Date(raw) : null;
+      if (d && !Number.isNaN(d.getTime())) years.add(d.getFullYear());
+    });
+
+    return Array.from(years).sort((a, b) => a - b);
+  }, [campaigns, currentYear]); 
+// load campaigns
   useEffect(() => {
     apiRequest('/campaigns')
       .then((data) => setCampaigns(data.campaigns || []))
@@ -111,6 +129,31 @@ useEffect(() => {
     setSearchTerm(e.target.value);
     setCurrentPage(1);
   };
+const handleYearFromChange = (e) => {
+  const val = e.target.value; // '' or '2024'
+
+  setFilterYearFrom(val);
+  setFilterYearTo((prevTo) => {
+if (val && Number(val) > currentYear) return String(currentYear);
+if (prevTo && val && Number(val) > Number(prevTo)) return String(currentYear);
+    return prevTo;
+  });
+
+  setCurrentPage(1);
+};
+
+const handleYearToChange = (e) => {
+  const val = e.target.value; // '' or '2025'
+
+  setFilterYearTo(val);
+  setFilterYearFrom((prevFrom) => {
+    if (prevFrom && val && Number(val) < Number(prevFrom)) return '';
+    return prevFrom;
+  });
+
+  setCurrentPage(1);
+};
+
   const pickName = (v) => {
     if (!v) return '';
     if (typeof v === 'string') return v;
@@ -205,7 +248,18 @@ if (filterTopic) {
 }
 
 
+      // year range filter (by campaign startDate; fallback createdAt)
+      if (filterYearFrom || filterYearTo) {
+const raw = c?.startDate ?? c?.createdAt ?? null;
+const baseDate = raw ? new Date(raw) : null;
+        // თუ თარიღი ცუდია/არ არის, გამოტოვე (ანუ არ გავატაროთ)
+        if (!baseDate || Number.isNaN(baseDate.getTime())) return false;
 
+        const y = baseDate.getFullYear();
+
+        if (filterYearFrom && y < Number(filterYearFrom)) return false;
+        if (filterYearTo && y > Number(filterYearTo)) return false;
+      }
       return true;
     });
   }, [
@@ -215,6 +269,8 @@ if (filterTopic) {
     filterTopic,
     filterTool,
     tools,
+    filterYearFrom,
+    filterYearTo,
   ]);
 
   // pagination
@@ -287,7 +343,32 @@ return (
               )}
             />
           </div>
+          {/* Year range */}
+          <select
+            className="filter-pill"
+            value={filterYearFrom}
+            onChange={handleYearFromChange}
+          >
+            <option value="">Year from (any)</option>
+            {yearOptions.map((y) => (
+              <option key={`from-${y}`} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
 
+          <select
+            className="filter-pill"
+            value={filterYearTo}
+            onChange={handleYearToChange}
+          >
+<option value="">Year to (any)</option>
+            {yearOptions.map((y) => (
+              <option key={`to-${y}`} value={y}>
+                {y}
+              </option>
+            ))}
+          </select>
           {/* Topic */}
           <select
             className="filter-pill"
