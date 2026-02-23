@@ -926,6 +926,9 @@ className={`chatbot-chat-message ${
                     {isSending ? '...' : 'Send'}
                   </button>
                 </form>
+                <p className="chatbot-privacy-note">
+  Privacy: Guest chats are saved only in your browser (local storage). To generate replies, your message and a limited recent history are processed on our server. Deleting a chat removes it from your device (guest) or from your account history on our server (logged-in).
+</p>
               </>
             ) : (
               <div className="chatbot-chat-empty-state">

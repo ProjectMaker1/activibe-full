@@ -3714,6 +3714,7 @@ button {
   margin: 0 auto;
   line-height: 1.7;
 
+
   /* ✅ glass */
   background: rgba(255, 255, 255, 0.55);
   border: 1px solid rgba(17, 24, 39, 0.10);
@@ -3723,8 +3724,14 @@ button {
   /* subtle depth */
   box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
   backdrop-filter: blur(10px);
-}
+  color: var(--text-main); /* ✅ ეს დაამატე */
 
+}
+.static-page h1,
+.static-page h2,
+.static-page h3{
+  color: var(--text-main);
+}
 /* typography */
 .static-page h1{
   margin: 0 0 0.9rem;
@@ -3947,4 +3954,12 @@ html, body{
 .drag-handle:active{
   cursor: grabbing;
   opacity: 1;
+}
+.chatbot-privacy-note{
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  opacity: 0.72;         /* same color, just softer */
+  text-align: center;     /* ქვემოთ კარგად ჩანს */
+  padding: 0 10px;
 }
