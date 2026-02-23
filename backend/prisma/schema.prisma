@@ -19,10 +19,28 @@ model User {
   isBlocked      Boolean       @default(false)
   badges         Int           @default(0)
   lastSeenBadges Int           @default(0)
+  isEmailVerified Boolean       @default(true) // ✅ NEW
+
   campaigns      Campaign[]
   chats          ChatSession[]
 }
+model PendingSignup {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  username      String   @unique
+  passwordHash  String
+  country       String?
 
+  codeHash      String
+  codeExpiresAt DateTime
+
+  attempts      Int      @default(0)
+  resendCount   Int      @default(0)
+  lastSentAt    DateTime @default(now())
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
 model Campaign {
   id            Int             @id @default(autoincrement())
   title         String

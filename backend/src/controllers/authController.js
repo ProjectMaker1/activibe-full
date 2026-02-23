@@ -19,7 +19,25 @@ export async function register(req, res, next) {
     next(err);
   }
 }
+export async function verifyEmail(req, res, next) {
+  try {
+    const { email, code } = req.body;
+    const result = await authService.verifySignupCode({ email, code });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
 
+export async function resendVerification(req, res, next) {
+  try {
+    const { email } = req.body;
+    const result = await authService.resendSignupCode({ email });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
 export async function login(req, res, next) {
   try {
     const { email, password } = req.body;

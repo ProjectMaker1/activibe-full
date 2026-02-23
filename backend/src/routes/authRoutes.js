@@ -5,12 +5,17 @@ import {
   refresh,
   me,
   markBadgesSeen,
+  verifyEmail,
+  resendVerification,
 } from '../controllers/authController.js';
 import { authRequired } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 router.post('/auth/register', register);
+router.post('/auth/verify-email', verifyEmail);          // ✅ NEW
+router.post('/auth/resend-code', resendVerification);    // ✅ NEW
+
 router.post('/auth/login', login);
 router.post('/auth/refresh', refresh);
 router.get('/auth/me', authRequired, me);

@@ -78,7 +78,13 @@ export function AuthProvider({ children }) {
     });
   };
 
-  // SIGNUP – username, email, password, country
+  /**
+   * SIGNUP – username, email, password, country
+   * ახალი flow:
+   * - backend აბრუნებს { pending:true, email, expiresInSeconds }
+   * - აქ არ ვინახავთ tokens/user-ს, სანამ verify არ დასრულდება
+   * - signup აბრუნებს response-ს, რომ UI გადავიდეს OTP ეტაპზე
+   */
   const signup = async (username, email, password, country) => {
     const data = await apiRequest('/auth/register', {
       method: 'POST',
@@ -90,11 +96,53 @@ export function AuthProvider({ children }) {
       },
     });
 
+    // ✅ pending flow - არ ვწერთ localStorage-ში
+    if (data?.pending) {
+      return data;
+    }
+
+    // (fallback თუ ოდესმე backend შეიცვლება და პირდაპირ დააბრუნებს user/tokens)
+    if (data?.user && data?.tokens) {
+      saveSession({
+        user: data.user,
+        accessToken: data.tokens.accessToken,
+        refreshToken: data.tokens.refreshToken,
+      });
+    }
+
+    return data;
+  };
+
+  /**
+   * VERIFY EMAIL (OTP)
+   * - backend აბრუნებს { user, tokens }
+   * - აქ უკვე ვინახავთ session-ს
+   */
+  const verifyEmailCode = async (email, code) => {
+    const data = await apiRequest('/auth/verify-email', {
+      method: 'POST',
+      body: { email, code },
+    });
+
     saveSession({
       user: data.user,
       accessToken: data.tokens.accessToken,
       refreshToken: data.tokens.refreshToken,
     });
+
+    return data;
+  };
+
+  /**
+   * RESEND OTP
+   * - backend აბრუნებს { ok:true, expiresInSeconds }
+   */
+  const resendSignupCode = async (email) => {
+    const data = await apiRequest('/auth/resend-code', {
+      method: 'POST',
+      body: { email },
+    });
+    return data;
   };
 
   const logout = () => {
@@ -103,35 +151,38 @@ export function AuthProvider({ children }) {
     setTokens({ accessToken: null, refreshToken: null });
     setHasNewBadge(false);
   };
-const refreshMe = async () => {
-  if (!tokens.accessToken) return;
 
-  try {
-    const res = await apiRequest('/auth/me', {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${tokens.accessToken}`,
-      },
-    });
+  const refreshMe = async () => {
+    if (!tokens.accessToken) return;
 
-    if (res?.user) {
-      setUser(res.user);
+    try {
+      const res = await apiRequest('/auth/me', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${tokens.accessToken}`,
+        },
+      });
 
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        parsed.user = res.user;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+      if (res?.user) {
+        setUser(res.user);
+
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          parsed.user = res.user;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+        }
       }
+    } catch (err) {
+      console.error('Failed to refresh user', err);
     }
-  } catch (err) {
-    console.error('Failed to refresh user', err);
-  }
-};
-useEffect(() => {
-  if (tokens.accessToken) refreshMe();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [tokens.accessToken]);
+  };
+
+  useEffect(() => {
+    if (tokens.accessToken) refreshMe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokens.accessToken]);
+
   // როცა იუზერი დახურავს დიდ ბეიჯის მოდალს
   const markBadgesSeen = async () => {
     if (!tokens.accessToken) return;
@@ -169,19 +220,21 @@ useEffect(() => {
     }
   };
 
-const value = {
-  user,
-  tokens,
-  loading,
-  login,
-  signup,
-  logout,
-  refreshMe,
-  isAuthenticated: !!user,
-  isAdmin: user?.role === 'ADMIN',
-  hasNewBadge,
-  markBadgesSeen,
-};
+  const value = {
+    user,
+    tokens,
+    loading,
+    login,
+    signup,
+    verifyEmailCode,   // ✅ NEW
+    resendSignupCode,  // ✅ NEW
+    logout,
+    refreshMe,
+    isAuthenticated: !!user,
+    isAdmin: user?.role === 'ADMIN',
+    hasNewBadge,
+    markBadgesSeen,
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

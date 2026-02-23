@@ -1,11 +1,44 @@
 // backend/src/services/emailService.js
-import { Resend } from 'resend';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
-
+import { resend } from '../config/resend.js';
 const FRONTEND_URL = (process.env.FRONTEND_URL || 'https://activibe.net').replace(/\/$/, '');
 const FROM_EMAIL = process.env.MAIL_FROM || 'support@activibe.net';
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@activibe.net';
+
+export async function sendSignupVerificationCode({ to, code, minutes }) {
+  const subject = 'Your ActiVibe verification code';
+
+  const html = `
+  <div style="font-family: Arial, sans-serif; line-height:1.5; color:#111;">
+    <h2 style="margin:0 0 12px 0;">Verify your email</h2>
+    <p style="margin:0 0 12px 0;">
+      Use the code below to complete your ActiVibe sign up.
+    </p>
+
+    <div style="font-size:28px; font-weight:700; letter-spacing:6px; padding:14px 18px; background:#f3f4f6; display:inline-block; border-radius:10px;">
+      ${code}
+    </div>
+
+    <p style="margin:12px 0 0 0;">
+      This code expires in <b>${minutes} minutes</b>.
+    </p>
+
+    <hr style="border:none; border-top:1px solid #e5e7eb; margin:18px 0;" />
+
+    <p style="margin:0; color:#374151; font-size:13px;">
+      Didn’t see the email? Please check your <b>Spam/Junk</b> folder.<br/>
+      If it’s there, mark it as <b>Not spam</b> so future emails arrive in your inbox.
+    </p>
+  </div>
+  `;
+
+  await resend.emails.send({
+    from: `ActiVibe <${FROM_EMAIL}>`,// e.g. "ActiVibe <no-reply@yourdomain.com>"
+    to,
+    subject,
+    html,
+  });
+}
+
 
 function mustEnv(v, name) {
   if (!v) {
