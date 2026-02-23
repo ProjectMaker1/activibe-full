@@ -421,6 +421,71 @@ export async function resendPasswordReset({ email }) {
   return { ok: true, expiresInSeconds: OTP_TTL_MINUTES * 60 };
 }
 
+export async function confirmPasswordReset({ email, code, newPassword }) {
+  const record = await prisma.passwordReset.findUnique({ where: { email } });
+  if (!record) {
+    const err = new Error('No password reset request found for this email.');
+    err.status = 400;
+    throw err;
+  }
+
+  if (record.codeExpiresAt.getTime() < Date.now()) {
+    const err = new Error('Verification code expired.');
+    err.status = 400;
+    throw err;
+  }
+
+  if (record.attempts >= 8) {
+    const err = new Error('Too many attempts. Please request a new code.');
+    err.status = 429;
+    throw err;
+  }
+
+  const codeHash = hashOtp(code);
+  if (codeHash !== record.codeHash) {
+    await prisma.passwordReset.update({
+      where: { email },
+      data: { attempts: { increment: 1 } },
+    });
+
+    const err = new Error('Invalid verification code.');
+    err.status = 400;
+    throw err;
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  if (!user) {
+    const err = new Error('No account found with this email address.');
+    err.status = 404;
+    throw err;
+  }
+
+  if (user.isEmailVerified === false) {
+    const err = new Error('This email address is not verified.');
+    err.status = 400;
+    throw err;
+  }
+
+  if (user.isBlocked) {
+    const err = new Error('Your account is blocked.');
+    err.status = 403;
+    throw err;
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { email },
+      data: { password: passwordHash },
+    });
+
+    await tx.passwordReset.delete({ where: { email } });
+  });
+
+  return { ok: true };
+}
 /* ===========================
    Helpers
 =========================== */
