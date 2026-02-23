@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import Select from 'react-select';
-import countryList from 'react-select-country-list';
+import { getCampaignCountries } from '../utils/countries.js';
 import 'flag-icons/css/flag-icons.min.css';
 import Loader from '../components/Loader.jsx';
 
@@ -46,8 +46,7 @@ const scrollPageTop = () => {
   const main = document.querySelector(".app-main");
   if (main) main.scrollTop = 0;
 };
-  const countryOptions = useMemo(() => countryList().getData(), []);
-
+const countryOptions = useMemo(() => getCampaignCountries(), []);
   // load campaigns
   useEffect(() => {
     apiRequest('/campaigns')
@@ -183,10 +182,14 @@ const matchesAny = (items, selected) => {
         if (!matchesTool) return false;
       }
 
-      // country filter
-      if (filterCountry && c.country !== filterCountry.value) {
-        return false;
-      }
+if (filterCountry) {
+  const list =
+    Array.isArray(c.countries) && c.countries.length
+      ? c.countries
+      : (c.country ? [c.country] : []);
+
+  if (!list.includes(filterCountry.value)) return false;
+}
 
  // topic filter (any-of, supports string/array/object + common keys)
 if (filterTopic) {
@@ -272,9 +275,13 @@ return (
                     gap: '8px',
                   }}
                 >
-                  <span
-                    className={`fi fi-${option.value.toLowerCase()}`}
-                  />
+{option.value === 'GLOBAL' ? (
+  <span style={{ width: 18, display: 'inline-flex', justifyContent: 'center' }}>🌏</span>
+) : option.value === 'ONLINE' ? (
+  <span style={{ width: 18, display: 'inline-flex', justifyContent: 'center' }}>🌐</span>
+) : (
+  <span className={`fi fi-${String(option.value).toLowerCase()}`} />
+)}
                   <span>{option.label}</span>
                 </div>
               )}

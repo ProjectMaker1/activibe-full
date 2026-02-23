@@ -5,10 +5,25 @@ import 'flag-icons/css/flag-icons.min.css';
 
 function CampaignCard({ campaign, onClick }) {
   const countryOptions = useMemo(() => countryList().getData(), []);
-const countryMeta =
-  campaign.country
-    ? countryOptions.find((c) => c.value === campaign.country)
-    : null;
+const pickCountries = (c) => {
+  const arr = Array.isArray(c?.countries) ? c.countries.filter(Boolean) : [];
+  if (arr.length) return arr;
+  return c?.country ? [c.country] : [];
+};
+
+const selectedCountries = useMemo(
+  () => pickCountries(campaign),
+  [campaign]
+);
+
+const countryMetas = useMemo(() => {
+  return selectedCountries
+    .map((code) => countryOptions.find((c) => c.value === code) || { value: code, label: code })
+    .filter(Boolean);
+}, [selectedCountries, countryOptions]);
+
+const cardCountries = countryMetas.slice(0, 3);
+const hasMoreCountries = countryMetas.length > 3;
 
 const format = (d) => (d ? new Date(d).toLocaleDateString() : '');
 const truncateWords = (text, maxWords) => {
@@ -86,18 +101,34 @@ const dateLabel = campaign.startDate
             color: '#6b7280',
           }}
         >
-          {countryMeta && (
-            <div
-              className="campaign-card-country"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-            >
-              <span
-                className={`fi fi-${countryMeta.value.toLowerCase()}`}
-                style={{ flexShrink: 0 }}
-              />
-              <span>{countryMeta.label}</span>
-            </div>
-          )}
+{cardCountries.length > 0 && (
+  <div
+    className="campaign-card-country"
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.35rem',
+      minWidth: 0,
+      overflow: 'hidden',
+      whiteSpace: 'nowrap',
+      textOverflow: 'ellipsis',
+    }}
+    title={countryMetas.map((c) => c.label).join(', ')}
+  >
+    {cardCountries.map((cm) => (
+      <span
+        key={cm.value}
+        style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+      >
+        <span className={`fi fi-${String(cm.value).toLowerCase()}`} />
+      </span>
+    ))}
+    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      {cardCountries.map((c) => c.label).join(', ')}
+      {hasMoreCountries ? '…' : ''}
+    </span>
+  </div>
+)}
 
 {campaign.startDate && (
   <span className={`campaign-card-date ${campaign.isOngoing ? 'ongoing' : ''}`}>

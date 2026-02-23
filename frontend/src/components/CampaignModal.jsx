@@ -10,10 +10,22 @@ function CampaignModal({ campaign, isOpen, onClose, isAdmin = false, onDelete })
   const navigate = useNavigate();
 
   const countryOptions = useMemo(() => countryList().getData(), []);
-  const countryMeta =
-    (campaign.country &&
-      countryOptions.find((c) => c.value === campaign.country)) ||
-    null;
+const pickCountries = (c) => {
+  const arr = Array.isArray(c?.countries) ? c.countries.filter(Boolean) : [];
+  if (arr.length) return arr;
+  return c?.country ? [c.country] : [];
+};
+
+const selectedCountries = useMemo(
+  () => pickCountries(campaign),
+  [campaign]
+);
+
+const countryMetas = useMemo(() => {
+  return selectedCountries
+    .map((code) => countryOptions.find((c) => c.value === code) || { value: code, label: code })
+    .filter(Boolean);
+}, [selectedCountries, countryOptions]);
   // ✅ ORDERED media list (DB first, fallback legacy fields)
   const orderedMedia = useMemo(() => {
     if (Array.isArray(campaign.media) && campaign.media.length > 0) {
@@ -203,22 +215,24 @@ useEffect(() => {
           <aside className="campaign-modal-sidebar">
             <h3>Details</h3>
             <div className="campaign-modal-details-list">
-              {campaign.country && (
-                <div className="campaign-modal-details-row">
-                  <span className="campaign-modal-details-label">
-                    COUNTRY
-                  </span>
-                  <span className="campaign-modal-details-value">
-                    {countryMeta && (
-                      <span
-                        className={`fi fi-${countryMeta.value.toLowerCase()}`}
-                        style={{ marginRight: 6 }}
-                      />
-                    )}
-                    {countryMeta ? countryMeta.label : campaign.country}
-                  </span>
-                </div>
-              )}
+{countryMetas.length > 0 && (
+  <div className="campaign-modal-details-row">
+    <span className="campaign-modal-details-label">COUNTRIES</span>
+    <span className="campaign-modal-details-value">
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+        {countryMetas.map((cm) => (
+          <span
+            key={cm.value}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
+            <span className={`fi fi-${String(cm.value).toLowerCase()}`} />
+            <span>{cm.label}</span>
+          </span>
+        ))}
+      </div>
+    </span>
+  </div>
+)}
 
 {/* TOPICS */}
 {Array.isArray(campaign.topics) && campaign.topics.length > 0 && (

@@ -59,6 +59,7 @@ const TOPIC_MENTOR_MAP = {
   'Peace & Anti-War Movements': 'Liam - Peace & Anti-War Movements',
   'School, University & Education': 'Hiro - School, University & Education',
   'Legislation & Penetration System': 'Jorgen - Legislation & Penetration System',
+  'Other': 'Nina - Other',
 };
 const LEGACY_MENTOR_REMAP = {
   'Václav Havel': 'Maya - Democracy, Freedom & Governance',
@@ -75,6 +76,7 @@ const TOPIC_VIDEO_KEY_MAP = {
   'Peace & Anti-War Movements': 'Peace',
   'School, University & Education': 'School',
   'Legislation & Penetration System': 'Legislation',
+  'Other': 'Other',
 };
 
 const MENTOR_AVATAR_MAP = {
@@ -143,7 +145,28 @@ const directAiLockRef = useRef(false);
   const [selectedTopicId, setSelectedTopicId] = useState(null);
   const [selectedToolId, setSelectedToolId] = useState('');
   const [selectedSubToolName, setSelectedSubToolName] = useState('');
+const mentorVideoRef = useRef(null);
 
+const openMentorVideoFullscreen = () => {
+  const video = mentorVideoRef.current;
+  if (!video) return;
+
+  // თუ უკვე fullscreen-ია, აღარ ვაკეთებთ არაფერს
+const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+if (isFs) return;
+  // Desktop fullscreen
+  const req =
+    video.requestFullscreen ||
+    video.webkitRequestFullscreen ||
+    video.mozRequestFullScreen ||
+    video.msRequestFullscreen;
+
+  if (req) {
+    req.call(video);
+    // optional: start playing automatically
+    video.play?.().catch(() => {});
+  }
+};
   /* ---------- Helper: normalize chat from backend ---------- */
 const normalizeChat = (raw) => {
   const fixedMentor =
@@ -189,7 +212,25 @@ const normalizeChat = (raw) => {
     };
   }, []);
 
-  
+  useEffect(() => {
+  const onFsChange = () => {
+    const isFs =
+      document.fullscreenElement || document.webkitFullscreenElement;
+
+    // თუ fullscreen დასრულდა — დავაპაუზოთ
+    if (!isFs && mentorVideoRef.current) {
+      mentorVideoRef.current.pause?.();
+    }
+  };
+
+  document.addEventListener('fullscreenchange', onFsChange);
+  document.addEventListener('webkitfullscreenchange', onFsChange);
+
+  return () => {
+    document.removeEventListener('fullscreenchange', onFsChange);
+    document.removeEventListener('webkitfullscreenchange', onFsChange);
+  };
+}, []);
 useEffect(() => {
   return () => {
     if (welcomeTimeoutId) clearTimeout(welcomeTimeoutId);
@@ -948,18 +989,27 @@ className={`chatbot-chat-message ${
           </header>
 
           <div className="chatbot-mentor-body">
-            {videoSrc && (
-              <button
-                type="button"
-                className="mentor-video-wrapper"
-              >
-                <video
-                  className="mentor-video"
-                  src={videoSrc}
-                  controls
-                />
-              </button>
-            )}
+{videoSrc && (
+<div
+  className="mentor-video-wrapper"
+  onClick={openMentorVideoFullscreen}
+  role="button"
+  tabIndex={0}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') openMentorVideoFullscreen();
+  }}
+>
+  <video
+    ref={mentorVideoRef}
+    className="mentor-video"
+    src={videoSrc}
+    controls
+    playsInline
+    onPlay={openMentorVideoFullscreen}
+    onClick={(e) => e.stopPropagation()}
+  />
+</div>
+)}
 
             <div className="mentor-text">
               <h3>Welcome message</h3>

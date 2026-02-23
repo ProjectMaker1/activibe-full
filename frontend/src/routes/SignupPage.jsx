@@ -9,7 +9,7 @@ import {
 } from '@shared/validators.js';
 
 import Select from 'react-select';
-import countryList from 'react-select-country-list';
+import { getSignupCountries } from '../utils/countries.js';
 import 'flag-icons/css/flag-icons.min.css';
 import Loader from '../components/Loader.jsx';
 
@@ -27,8 +27,7 @@ function SignupPage() {
 
 
   // ქვეყნების ლისტი – label/value უბრალო სტრინგებია, ამიტომ search ნორმალურად მუშაობს
-  const countryOptions = useMemo(() => countryList().getData(), []);
-
+const countryOptions = useMemo(() => getSignupCountries(), []);
   const handleSubmit = async (e) => {
     e.preventDefault();
 

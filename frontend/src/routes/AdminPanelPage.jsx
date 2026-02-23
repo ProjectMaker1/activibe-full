@@ -3,21 +3,21 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { apiRequest, withAuth } from '@shared/apiClient.js';
 import CampaignModal from '../components/CampaignModal.jsx';
 import CategoriesManager from '../components/CategoriesManager.jsx';
-import countryList from 'react-select-country-list';
+import { getBaseCountries } from '../utils/countries.js';
 import 'flag-icons/css/flag-icons.min.css';
 import Loader from '../components/Loader.jsx';
-
+import { getCampaignCountries } from '../utils/countries.js';
 const TABS = {
   STATS: 'stats',
   REQUESTS: 'requests',
   USERS: 'users',
   CATEGORIES: 'categories',
 };
-const countryOptions = countryList().getData();
-
-function getCountryMeta(code) {
+const baseCountryOptions = getBaseCountries();      // users country (no global/online)
+const campaignCountryOptions = getCampaignCountries(); // stats (includes global/online)
+function getCountryMeta(code, options) {
   if (!code) return null;
-  return countryOptions.find((c) => c.value === code) || null;
+  return (options || []).find((c) => c.value === code) || null;
 }
 
 function AdminPanelPage() {
@@ -244,8 +244,12 @@ const confirmUserAction = async () => {
           {error && <p className="status-error">{error}</p>}
 
           {!loading && !error && activeTab === TABS.STATS && (
-            <StatsPlaceholder campaigns={campaigns} users={users} />
-          )}
+<StatsPlaceholder
+  campaigns={campaigns}
+  users={users}
+  campaignCountryOptions={campaignCountryOptions}
+/>    
+      )}
 
           {!loading && !error && activeTab === TABS.REQUESTS && (
             <RequestsTable
@@ -471,8 +475,7 @@ function UsersTable({ users, onUserAction }) {
       </div>
 
       {users.map((u) => {
-        const countryMeta = getCountryMeta(u.country);
-
+const countryMeta = getCountryMeta(u.country, baseCountryOptions);
         return (
           <div
             key={u.id}
@@ -546,8 +549,8 @@ function UsersTable({ users, onUserAction }) {
 
 
 
-function StatsPlaceholder({ campaigns, users }) {
-  const totalUsers = users.length;
+function StatsPlaceholder({ campaigns, users, campaignCountryOptions }) {
+const totalUsers = users.length;
   const blockedUsers = users.filter((u) => u.isBlocked).length;
   const activeUsers = totalUsers - blockedUsers;
 
@@ -591,19 +594,30 @@ function StatsPlaceholder({ campaigns, users }) {
   const rejectedPct = Math.round((rejected / statusTotal) * 100);
 
   // ტოპ ქვეყნები კამპანიების მიხედვით
-  const countryMap = {};
-  campaigns.forEach((c) => {
-    const code = c.country || c.createdBy?.country;
-    if (!code) return;
-    countryMap[code] = (countryMap[code] || 0) + 1;
-  });
+const countryMap = {};
+
+campaigns.forEach((c) => {
+  // 1) თუ countries არის მასივი — ყველა ქვეყანა ჩავთვალოთ
+  if (Array.isArray(c.countries) && c.countries.length > 0) {
+    c.countries.forEach((code) => {
+      if (!code) return;
+      countryMap[code] = (countryMap[code] || 0) + 1;
+    });
+    return;
+  }
+
+  // 2) fallback legacy: country ან createdBy.country
+  const code = c.country || c.createdBy?.country;
+  if (!code) return;
+  countryMap[code] = (countryMap[code] || 0) + 1;
+});
 
   const topCountriesRaw = Object.entries(countryMap)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
   const topCountries = topCountriesRaw.map(([code, count]) => {
-    const meta = getCountryMeta(code);
+const meta = getCountryMeta(code, campaignCountryOptions);
     return {
       code,
       label: meta?.label || code,
@@ -739,7 +753,13 @@ function StatsPlaceholder({ campaigns, users }) {
                 {topCountries.map((c) => (
                   <li key={c.code} className="stats-country-row">
                     <div className="stats-country-left">
-                      <span className={`fi fi-${c.code.toLowerCase()}`} />
+{c.code === 'GLOBAL' ? (
+  <span style={{ width: 18, display: 'inline-flex', justifyContent: 'center' }}>🌏</span>
+) : c.code === 'ONLINE' ? (
+  <span style={{ width: 18, display: 'inline-flex', justifyContent: 'center' }}>🌐</span>
+) : (
+  <span className={`fi fi-${String(c.code).toLowerCase()}`} />
+)}
                       <span>{c.label}</span>
                     </div>
                     <div className="stats-country-right">

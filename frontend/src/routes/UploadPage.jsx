@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { apiRequest, withAuth } from '@shared/apiClient.js';
 import { validateRequired } from '@shared/validators.js';
 import Select from 'react-select';
-import countryList from 'react-select-country-list';
+import { getCampaignCountries } from '../utils/countries.js';
 import 'flag-icons/css/flag-icons.min.css';
 import '../styles/upload.css';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -48,7 +48,7 @@ const [references, setReferences] = useState('');
 const [referenceError, setReferenceError] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0); // progress bar
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
-  const countryOptions = useMemo(() => countryList().getData(), []);
+const countryOptions = useMemo(() => getCampaignCountries(), []);
 
   // ბევრი ფაილი: [{ file: File, preview: string }]
 const [files, setFiles] = useState([]);
@@ -732,8 +732,14 @@ setStatus({
   closeMenuOnSelect={false}
   formatOptionLabel={(option) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <span className={`fi fi-${String(option.value).toLowerCase()}`} />
-      <span>{option.label}</span>
+{option.value === 'GLOBAL' ? (
+  <span style={{ width: 18, display: 'inline-flex', justifyContent: 'center' }}>🌏</span>
+) : option.value === 'ONLINE' ? (
+  <span style={{ width: 18, display: 'inline-flex', justifyContent: 'center' }}>🌐</span>
+) : (
+  <span className={`fi fi-${String(option.value).toLowerCase()}`} />
+)}  
+    <span>{option.label}</span>
     </div>
   )}
 />
