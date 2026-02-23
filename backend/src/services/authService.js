@@ -279,38 +279,38 @@ export async function refreshTokens(refreshToken) {
 export async function requestPasswordReset({ email }) {
   const user = await prisma.user.findUnique({ where: { email } });
 
-  // ✅ If email not found -> DON'T send email
+  // ❌ თუ user არ არსებობს
   if (!user) {
-    const err = new Error('No verified account found with this email address.');
+    const err = new Error('No account found with this email address.');
     err.status = 404;
     throw err;
   }
 
-  // ✅ If not verified -> DON'T send email
+  // ❌ თუ არ არის ვერიფიცირებული
   if (user.isEmailVerified === false) {
     const err = new Error('This email address is not verified.');
     err.status = 400;
     throw err;
   }
 
+  // ❌ თუ დაბლოკილია
   if (user.isBlocked) {
-    const err = new Error('Your account is blocked');
+    const err = new Error('Your account is blocked.');
     err.status = 403;
     throw err;
   }
 
   const existing = await prisma.passwordReset.findUnique({ where: { email } });
 
-  // rate limit: 30 seconds
   if (existing) {
     const secondsSinceLast = (Date.now() - existing.lastSentAt.getTime()) / 1000;
+
     if (secondsSinceLast < 30) {
-      const err = new Error('Please wait before requesting a new code');
+      const err = new Error('Please wait before requesting a new code.');
       err.status = 429;
       throw err;
     }
 
-    // ✅ limit resends (and requests) by resendCount
     if (existing.resendCount >= 8) {
       const err = new Error('Too many resend requests. Please try again later.');
       err.status = 429;
