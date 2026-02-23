@@ -3934,3 +3934,17 @@ html, body{
   }
 }
 .app-main { scroll-behavior: auto; }
+
+.drag-handle{
+  border: none;
+  background: transparent;
+  cursor: grab;
+  font-size: 16px;
+  padding: 2px 6px;
+  opacity: 0.6;
+}
+
+.drag-handle:active{
+  cursor: grabbing;
+  opacity: 1;
+}

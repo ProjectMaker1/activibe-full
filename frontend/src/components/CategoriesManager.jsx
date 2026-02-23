@@ -598,6 +598,7 @@ function SortableTopicItem({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
   } = useSortable({ id: topic.id });
@@ -611,14 +612,26 @@ function SortableTopicItem({
     <li
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
       className={
         topic.id === selectedTopicId
           ? 'categories-list-item active'
           : 'categories-list-item'
       }
     >
+      {/* ✅ Drag HANDLE (მხოლოდ აქ მუშაობს drag) */}
+      <button
+        type="button"
+        ref={setActivatorNodeRef}
+        className="drag-handle"
+        {...attributes}
+        {...listeners}
+        aria-label="Drag topic"
+        title="Drag"
+      >
+        ☰
+      </button>
+
+      {/* ✅ Select works normally */}
       <button
         type="button"
         className="link-btn"
@@ -648,6 +661,7 @@ function SortableToolItem({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
   } = useSortable({ id: tool.id });
@@ -661,14 +675,26 @@ function SortableToolItem({
     <li
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
       className={
         tool.id === selectedToolId
           ? 'categories-list-item active'
           : 'categories-list-item'
       }
     >
+      {/* ✅ Drag HANDLE */}
+      <button
+        type="button"
+        ref={setActivatorNodeRef}
+        className="drag-handle"
+        {...attributes}
+        {...listeners}
+        aria-label="Drag tool"
+        title="Drag"
+      >
+        ☰
+      </button>
+
+      {/* ✅ Select */}
       <button
         type="button"
         className="link-btn"
