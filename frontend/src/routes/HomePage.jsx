@@ -5,8 +5,7 @@ function HomePage() {
   const navigate = useNavigate();
 
   const handleAiClick = () => {
-    navigate("/chatbot");
-  };
+navigate("/chatbot?directAI=1");  };
 
   return (
     <div className="home-page">

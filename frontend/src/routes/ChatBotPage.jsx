@@ -1,14 +1,15 @@
 // frontend/src/routes/ChatBotPage.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { apiRequest, withAuth } from '@shared/apiClient.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import Loader from '../components/Loader.jsx';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 function TypingDots() {
-  return (
+return (
     <>
       <span className="av-typing-dots" aria-label="Assistant is typing">
         <span />
@@ -115,7 +116,8 @@ function saveGuestChats(chats) {
 
 function ChatBotPage() {
   const { tokens } = useAuth(); // 👈 აქედან ვიღებთ accessToken-ს
-
+  const location = useLocation();
+  const navigate = useNavigate();
   const [topics, setTopics] = useState([]);
   const [tools, setTools] = useState([]);
 
@@ -132,7 +134,8 @@ function ChatBotPage() {
   const [currentMessage, setCurrentMessage] = useState('');
 const [isSending, setIsSending] = useState(false);
 const [welcomeTimeoutId, setWelcomeTimeoutId] = useState(null);
-  
+const [isCreatingChat, setIsCreatingChat] = useState(false); // ✅ დაამატე ეს  
+const directAiLockRef = useRef(false);
 // answers
 
   const [selectedTopicId, setSelectedTopicId] = useState(null);
@@ -426,6 +429,37 @@ if (welcomeTimeoutId) clearTimeout(welcomeTimeoutId);
     setActiveChatId(id);
     setCurrentMessage('');
   };
+  // ✅✅✅ აი აქ არის directAI useEffect-ის ადგილი (startNewChat-ის მერე!)
+useEffect(() => {
+  const params = new URLSearchParams(location.search);
+  if (params.get('directAI') !== '1') return;
+
+  // თუ უკვე გადაყვანილი ხარ chat-ზე და გაქვს activeChat — აღარ შექმნას თავიდან
+  if (mode === 'chat' && activeChatId) return;
+
+  // ✅ DEV StrictMode lock (100% stop duplicates)
+if (isCreatingChat) return;
+if (directAiLockRef.current) return;
+
+directAiLockRef.current = true;
+setIsCreatingChat(true);
+
+(async () => {
+  try {
+    setSelectedTopicId(null);
+    setSelectedToolId('');
+    setSelectedSubToolName('');
+
+    await startNewChat({ mentorName: null, withWelcome: false });
+    setMode('chat');
+
+    navigate('/chatbot', { replace: true });
+  } finally {
+    setIsCreatingChat(false);
+  }
+})();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [location.search, mode, activeChatId, isCreatingChat]);
 // ✅ ჩატის წაშლა (auth → backend, guest → localStorage)
 const handleDeleteChat = async (chatId) => {
   const ok = window.confirm('Are you sure you want to delete this conversation?');
@@ -639,19 +673,9 @@ return;
     setStep(1);
   };
 
-  // ❗ Direct to AI – არ ბლოკავს guest-ს, უბრალოდ სხვანაირად ინახავს
-  const handleDirectToAI = async () => {
-    setSelectedTopicId(null);
-    setSelectedToolId('');
-    setSelectedSubToolName('');
-
-    await startNewChat({
-      mentorName: null, // generic assistant
-      withWelcome: false,
-    });
-
-    setMode('chat');
-  };
+const handleDirectToAI = () => {
+  navigate('/chatbot?directAI=1');
+};
 
   const handleToolChange = (e) => {
     const value = e.target.value;
