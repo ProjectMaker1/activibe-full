@@ -99,3 +99,32 @@ export async function markBadgesSeen(req, res, next) {
     next(err);
   }
 }
+export async function forgotPassword(req, res, next) {
+  try {
+    const { email } = req.body;
+    const result = await authService.requestPasswordReset({ email });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function resendForgotPassword(req, res, next) {
+  try {
+    const { email } = req.body;
+    const result = await authService.resendPasswordReset({ email });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function resetPassword(req, res, next) {
+  try {
+    const { email, code, newPassword } = req.body;
+    const result = await authService.confirmPasswordReset({ email, code, newPassword });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}

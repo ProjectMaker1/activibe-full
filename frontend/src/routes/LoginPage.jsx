@@ -71,11 +71,15 @@ function LoginPage() {
             </p>
           )}
 
-        <button type="submit" className="btn-primary" disabled={submitting}>
-          Login
-        </button>
-
+          <button type="submit" className="btn-primary" disabled={submitting}>
+            Login
+          </button>
         </form>
+
+        {/* ✅ ONLY NEW: forgot password link */}
+        <p className="auth-switch" style={{ marginTop: 10 }}>
+          <Link to="/forgot-password">Forgot password?</Link>
+        </p>
 
         <p className="auth-switch">
           Don&apos;t have an account? <Link to="/signup">Sign up</Link>

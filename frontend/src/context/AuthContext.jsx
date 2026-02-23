@@ -144,7 +144,42 @@ export function AuthProvider({ children }) {
     });
     return data;
   };
+// FORGOT PASSWORD – request code
+const forgotPassword = async (email) => {
+  const data = await apiRequest('/auth/forgot-password', {
+    method: 'POST',
+    body: { email },
+  });
+  return data; // { ok:true, email, expiresInSeconds }
+};
 
+// FORGOT PASSWORD – resend code
+const resendForgotPassword = async (email) => {
+  const data = await apiRequest('/auth/forgot-password/resend', {
+    method: 'POST',
+    body: { email },
+  });
+  return data; // { ok:true, expiresInSeconds }
+};
+
+// FORGOT PASSWORD – confirm code + set new password
+const resetPassword = async (email, code, newPassword) => {
+  const data = await apiRequest('/auth/reset-password', {
+    method: 'POST',
+    body: { email, code, newPassword },
+  });
+
+  // თუ backend აბრუნებს user/tokens -> auto login
+  if (data?.user && data?.tokens?.accessToken) {
+    saveSession({
+      user: data.user,
+      accessToken: data.tokens.accessToken,
+      refreshToken: data.tokens.refreshToken,
+    });
+  }
+
+  return data;
+};
   const logout = () => {
     localStorage.removeItem(STORAGE_KEY);
     setUser(null);
@@ -228,6 +263,9 @@ export function AuthProvider({ children }) {
     signup,
     verifyEmailCode,   // ✅ NEW
     resendSignupCode,  // ✅ NEW
+    forgotPassword,
+    resendForgotPassword,
+    resetPassword,
     logout,
     refreshMe,
     isAuthenticated: !!user,

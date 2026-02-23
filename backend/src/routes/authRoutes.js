@@ -7,6 +7,9 @@ import {
   markBadgesSeen,
   verifyEmail,
   resendVerification,
+  forgotPassword,
+  resendForgotPassword,
+  resetPassword,
 } from '../controllers/authController.js';
 import { authRequired } from '../middleware/authMiddleware.js';
 
@@ -15,7 +18,9 @@ const router = express.Router();
 router.post('/auth/register', register);
 router.post('/auth/verify-email', verifyEmail);          // ✅ NEW
 router.post('/auth/resend-code', resendVerification);    // ✅ NEW
-
+router.post('/auth/forgot-password', forgotPassword);
+router.post('/auth/forgot-password/resend', resendForgotPassword);
+router.post('/auth/reset-password', resetPassword);
 router.post('/auth/login', login);
 router.post('/auth/refresh', refresh);
 router.get('/auth/me', authRequired, me);

@@ -8,6 +8,7 @@ import ChatBotPage from './routes/ChatBotPage.jsx';
 import UploadPage from './routes/UploadPage.jsx';
 import LoginPage from './routes/LoginPage.jsx';
 import SignupPage from './routes/SignupPage.jsx';
+import ForgotPasswordPage from './routes/ForgotPasswordPage.jsx';
 import AdminPanelPage from './routes/AdminPanelPage.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
@@ -16,6 +17,7 @@ import AboutPage from "./routes/AboutPage";
 import ContactPage from "./routes/ContactPage";
 import PrivacyPage from "./routes/PrivacyPage";
 import ScrollToTop from "./components/ScrollToTop.jsx";
+
 function App() {
   // light / dark theme toggle
   const [theme, setTheme] = useState('light'); // 'light' | 'dark'
@@ -71,7 +73,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-
+<Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route
               path="/admin"
               element={
