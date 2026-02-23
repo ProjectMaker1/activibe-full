@@ -26,7 +26,8 @@ export default function ForgotPasswordPage() {
 
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('Your password has been changed successfully.');
   // countdown
   useEffect(() => {
     if (step !== 'verify') return;
@@ -128,13 +129,12 @@ export default function ForgotPasswordPage() {
     setSubmitting(true);
     setStatus(null);
 
-    try {
-      await resetPassword(email, clean, newPassword);
+try {
+  await resetPassword(email, clean, newPassword);
 
-      // resetPassword შეიძლება აბრუნებდეს user/tokens და ავტო-ლოგინსაც აკეთებდეს AuthContext-ში
-      // ნებისმიერ შემთხვევაში, გადავიყვანოთ:
-      navigate('/');
-    } catch (err) {
+  setStatus(null);
+  setShowSuccessModal(true);
+} catch (err) {
       const msg = String(err?.message || 'Reset failed');
       setStatus({ type: 'error', message: msg });
 
@@ -278,6 +278,50 @@ export default function ForgotPasswordPage() {
             </p>
           </form>
         )}
+              {showSuccessModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15,23,42,0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+            zIndex: 9999,
+          }}
+          onClick={() => setShowSuccessModal(false)}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 420,
+              background: '#fff',
+              borderRadius: 16,
+              padding: 18,
+              boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800 }}>
+              Success
+            </h3>
+
+            <p style={{ margin: '0 0 14px', color: 'var(--text-muted)' }}>
+              {successMsg}
+            </p>
+
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => navigate('/login')}
+              style={{ width: '100%' }}
+            >
+              Log in
+            </button>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );

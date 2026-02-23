@@ -14,6 +14,7 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  
   if (submitting) {
     return <Loader />;
   }
