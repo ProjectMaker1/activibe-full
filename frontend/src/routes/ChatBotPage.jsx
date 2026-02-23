@@ -58,6 +58,7 @@ const TOPIC_MENTOR_MAP = {
   'Human Rights & Equality': 'Talia - Human Rights & Equality',
   'Peace & Anti-War Movements': 'Liam - Peace & Anti-War Movements',
   'School, University & Education': 'Hiro - School, University & Education',
+  'Legislation & Penetration System': 'Jorgen - Legislation & Penetration System',
 };
 const LEGACY_MENTOR_REMAP = {
   'Václav Havel': 'Maya - Democracy, Freedom & Governance',
@@ -73,6 +74,7 @@ const TOPIC_VIDEO_KEY_MAP = {
   'Human Rights & Equality': 'HumanRights',
   'Peace & Anti-War Movements': 'Peace',
   'School, University & Education': 'School',
+  'Legislation & Penetration System': 'Legislation',
 };
 
 const MENTOR_AVATAR_MAP = {

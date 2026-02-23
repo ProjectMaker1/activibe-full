@@ -37,6 +37,7 @@ model Campaign {
   topics        Json?
   tools         Json?
   country       String?
+  countries     Json? 
   endDate       DateTime?
   isOngoing     Boolean         @default(false)
   startDate     DateTime        @default(now())

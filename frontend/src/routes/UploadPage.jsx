@@ -29,7 +29,7 @@ const navigate = useNavigate();
 const [startDate, setStartDate] = useState('');
 const [endDate, setEndDate] = useState('');
 const [isOngoing, setIsOngoing] = useState(false);
-  const [country, setCountry] = useState(null); // { label, value }
+const [countries, setCountries] = useState([]); // [{ label, value }]
 const [topics, setTopics] = useState([]);
 const [subtopics, setSubtopics] = useState([]);
 const [tools, setTools] = useState([]);
@@ -155,12 +155,15 @@ const subToolOptions = useMemo(() => {
         setIsOngoing(!!c.isOngoing);
         setEndDate(c.isOngoing ? '' : toDateInputValue(c.endDate));
 
-        // country select
-        const foundCountry =
-          c.country
-            ? (countryOptions.find((opt) => opt.value === c.country) || { value: c.country, label: c.country })
-            : null;
-        setCountry(foundCountry);
+// countries select (multi)
+const rawCountries = Array.isArray(c.countries) && c.countries.length
+  ? c.countries
+  : (c.country ? [c.country] : []);
+
+const foundCountries = rawCountries
+  .map((code) => countryOptions.find((opt) => opt.value === code) || { value: code, label: code });
+
+setCountries(foundCountries);
 
         // selects expect {value,label}
         const tVals = (Array.isArray(c.topics) ? c.topics : []).map((x) => ({ value: x, label: x }));
@@ -406,8 +409,8 @@ mediaPayload.push({
         endDate: isOngoing ? null : (endDate || null),
         isOngoing,
 
-        country: country?.value || null,
-
+countries: countries.map(c => c.value),
+country: countries[0]?.value || null, // ✅ backward compat: პირველი ქვეყანა როგორც ძველი country
         topics: topics.map(t => t.value),
         subtopics: subtopics.map(s => s.value),
         tools: tools.map(t => t.value),
@@ -472,7 +475,7 @@ setStatus({
         setStartDate('');
         setEndDate('');
         setIsOngoing(false);
-        setCountry(null);
+        setCountries([]);
         setTopics([]);
         setSubtopics([]);
         setTools([]);
@@ -719,21 +722,21 @@ setStatus({
         <div className="form-row">
           <label className="field">
             <span>Country</span>
-            <Select
-              options={countryOptions}
-              value={country}
-              onChange={setCountry}
-              placeholder="Select country"
-              classNamePrefix="react-select"
-              formatOptionLabel={(option) => (
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                >
-                  <span className={`fi fi-${option.value.toLowerCase()}`} />
-                  <span>{option.label}</span>
-                </div>
-              )}
-            />
+<Select
+  isMulti
+  options={countryOptions}
+  value={countries}
+  onChange={(vals) => setCountries(vals || [])}
+  placeholder="Select countries..."
+  classNamePrefix="react-select"
+  closeMenuOnSelect={false}
+  formatOptionLabel={(option) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <span className={`fi fi-${String(option.value).toLowerCase()}`} />
+      <span>{option.label}</span>
+    </div>
+  )}
+/>
           </label>
 
 <label className="field">

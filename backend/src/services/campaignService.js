@@ -32,24 +32,32 @@ export async function listAllCampaigns() {
 export async function createCampaign(data, user) {
   const status = user.role === 'ADMIN' ? 'APPROVED' : 'PENDING';
 
-  const {
-    title,
-    description,
-    country,
-    topics,
-    subtopics,
-    tools,
-    subTools,
-    startDate,
-    endDate,
-    isOngoing,
-    imageUrl: bodyImageUrl,
-    videoUrl: bodyVideoUrl,
-    media,
-    referenceType,
-    references,
-  } = data;
+const {
+  title,
+  description,
+  country,
+  countries,
+  topics,
+  subtopics,
+  tools,
+  subTools,
+  startDate,
+  endDate,
+  isOngoing,
+  imageUrl: bodyImageUrl,
+  videoUrl: bodyVideoUrl,
+  media,
+  referenceType,
+  references,
+} = data;
 
+// ✅ normalize countries (backward compatible)
+const normalizedCountries = Array.isArray(countries) && countries.length
+  ? countries
+  : (country ? [country] : []);
+
+const primaryCountry = country || normalizedCountries[0] || null;
+const countriesToSave = normalizedCountries.length ? normalizedCountries : null;
   if (referenceType === 'EXTERNAL' && (!references || !references.trim())) {
     const err = new Error('Reference is required when source is external');
     err.status = 400;
@@ -75,7 +83,8 @@ export async function createCampaign(data, user) {
       description,
       imageUrl,
       videoUrl,
-      country: country || null,
+      country: primaryCountry,
+      countries: countriesToSave,
       topics: Array.isArray(topics) ? topics : [],
       subtopics: Array.isArray(subtopics) ? subtopics : [],
       tools: Array.isArray(tools) ? tools : [],
@@ -87,6 +96,7 @@ export async function createCampaign(data, user) {
       references: referenceType === 'EXTERNAL' ? references.trim() : null,
       status,
       createdById: user.id,
+
       media:
         Array.isArray(media) && media.length
           ? {
@@ -98,13 +108,15 @@ export async function createCampaign(data, user) {
                 sourceUrl: m.sourceUrl || null,
               })),
             }
+            
           : undefined,
+          
     },
+    
     include: {
       media: { orderBy: { order: 'asc' } },
     },
   });
-
   // 📧 Support email მხოლოდ PENDING-ზე
   if (created.status === 'PENDING') {
     sendNewCampaignToSupport({
@@ -264,6 +276,7 @@ export async function updateCampaignAsAdmin(id, data) {
       title,
       description,
       country,
+      countries,
       topics,
       subtopics,
       tools,
@@ -281,12 +294,23 @@ export async function updateCampaignAsAdmin(id, data) {
       keepMediaIds,
       newMedia,
     } = data ?? {};
+    
+// ✅ update country/countries ONLY if user actually sent them
+const hasCountryPatch = country !== undefined || countries !== undefined;
 
-    if (referenceType === 'EXTERNAL' && (!references || !references.trim())) {
-      const err = new Error('Reference is required when source is external');
-      err.status = 400;
-      throw err;
-    }
+let countryPatch = {};
+if (hasCountryPatch) {
+  const normalizedCountries = Array.isArray(countries) && countries.length
+    ? countries
+    : (country ? [country] : []);
+
+  const primaryCountry = country || normalizedCountries[0] || null;
+
+  countryPatch = {
+    country: primaryCountry,
+    countries: normalizedCountries.length ? normalizedCountries : null, // ✅ no []
+  };
+}
 
     // --- media: determine what to keep ---
     const keepSet = new Set(
@@ -297,7 +321,7 @@ export async function updateCampaignAsAdmin(id, data) {
     await tx.campaignMedia.deleteMany({
       where: {
         campaignId: id,
-        id: { notIn: Array.from(keepSet) },
+        ...(keepSet.size ? { id: { notIn: Array.from(keepSet) } } : {}),
       },
     });
 
@@ -378,35 +402,37 @@ export async function updateCampaignAsAdmin(id, data) {
     const computedImageUrl = firstImage ? firstImage.url : null;
     const computedVideoUrl = firstVideo ? firstVideo.url : null;
 
-    const updated = await tx.campaign.update({
-      where: { id },
-      data: {
-        title: typeof title === 'string' ? title : existing.title,
-        description:
-          typeof description === 'string' ? description : existing.description,
+const updated = await tx.campaign.update({
+  where: { id },
+  data: {
+    title: typeof title === 'string' ? title : existing.title,
+    description:
+      typeof description === 'string' ? description : existing.description,
 
-        country: country ?? null,
+    ...countryPatch,
 
-        topics: Array.isArray(topics) ? topics : [],
-        subtopics: Array.isArray(subtopics) ? subtopics : [],
-        tools: Array.isArray(tools) ? tools : [],
-        subTools: Array.isArray(subTools) ? subTools : [],
+    topics: Array.isArray(topics) ? topics : [],
+    subtopics: Array.isArray(subtopics) ? subtopics : [],
+    tools: Array.isArray(tools) ? tools : [],
+    subTools: Array.isArray(subTools) ? subTools : [],
 
-        startDate: startDate ? new Date(startDate) : existing.startDate,
-        endDate: isOngoing ? null : endDate ? new Date(endDate) : null,
-        isOngoing: !!isOngoing,
-        referenceType: referenceType || existing.referenceType,
-        references:
-          referenceType === 'EXTERNAL'
-            ? references.trim()
-            : referenceType === 'OWN'
-              ? null
-              : existing.references,
-        imageUrl: computedImageUrl,
-        videoUrl: computedVideoUrl,
-      },
-      include: { media: { orderBy: { order: 'asc' } } },
-    });
+    startDate: startDate ? new Date(startDate) : existing.startDate,
+    endDate: isOngoing ? null : endDate ? new Date(endDate) : null,
+    isOngoing: !!isOngoing,
+
+    referenceType: referenceType || existing.referenceType,
+    references:
+      referenceType === 'EXTERNAL'
+        ? references.trim()
+        : referenceType === 'OWN'
+          ? null
+          : existing.references,
+
+    imageUrl: computedImageUrl,
+    videoUrl: computedVideoUrl,
+  },
+  include: { media: { orderBy: { order: 'asc' } } },
+});
 
     return updated;
   });
