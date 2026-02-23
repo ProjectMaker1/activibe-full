@@ -277,12 +277,7 @@ export async function refreshTokens(refreshToken) {
 =========================== */
 
 export async function requestPasswordReset({ email }) {
-  // ✅ Security: don’t reveal if account exists
   const user = await prisma.user.findUnique({ where: { email } });
-
-  // Always act as if OK.
-  // If user does not exist -> just return ok.
-  if (!user) return { ok: true, expiresInSeconds: OTP_TTL_MINUTES * 60 };
 
   if (user.isBlocked) {
     const err = new Error('Your account is blocked');
@@ -318,7 +313,7 @@ export async function requestPasswordReset({ email }) {
       codeHash,
       codeExpiresAt: expiresAt,
       attempts: 0,
-      resendCount: { increment: 1 }, // ✅ counts requests too
+      resendCount: existing ? existing.resendCount : 0,
       lastSentAt: new Date(),
     },
     create: {
@@ -341,46 +336,16 @@ export async function requestPasswordReset({ email }) {
 }
 
 export async function resendPasswordReset({ email }) {
-  // Same behavior as requestPasswordReset (kept separate endpoint)
-  return requestPasswordReset({ email });
-}
-
-export async function confirmPasswordReset({ email, code, newPassword }) {
-  const record = await prisma.passwordReset.findUnique({ where: { email } });
-  if (!record) {
-    const err = new Error('No password reset request found for this email');
-    err.status = 400;
-    throw err;
-  }
-
-  if (record.codeExpiresAt.getTime() < Date.now()) {
-    const err = new Error('Verification code expired');
-    err.status = 400;
-    throw err;
-  }
-
-  if (record.attempts >= 8) {
-    const err = new Error('Too many attempts. Please request a new code.');
-    err.status = 429;
-    throw err;
-  }
-
-  const codeHash = hashOtp(code);
-  if (codeHash !== record.codeHash) {
-    await prisma.passwordReset.update({
-      where: { email },
-      data: { attempts: { increment: 1 } },
-    });
-
-    const err = new Error('Invalid verification code');
-    err.status = 400;
-    throw err;
-  }
-
   const user = await prisma.user.findUnique({ where: { email } });
+
   if (!user) {
-    // keep safe
-    const err = new Error('Invalid request');
+    const err = new Error('No verified account found with this email address.');
+    err.status = 404;
+    throw err;
+  }
+
+  if (user.isEmailVerified === false) {
+    const err = new Error('This email address is not verified.');
     err.status = 400;
     throw err;
   }
@@ -391,18 +356,53 @@ export async function confirmPasswordReset({ email, code, newPassword }) {
     throw err;
   }
 
-  const passwordHash = await hashPassword(newPassword);
+  const existing = await prisma.passwordReset.findUnique({ where: { email } });
 
-  await prisma.$transaction(async (tx) => {
-    await tx.user.update({
-      where: { email },
-      data: { password: passwordHash },
-    });
+  if (existing) {
+    const secondsSinceLast = (Date.now() - existing.lastSentAt.getTime()) / 1000;
+    if (secondsSinceLast < 30) {
+      const err = new Error('Please wait before requesting a new code');
+      err.status = 429;
+      throw err;
+    }
 
-    await tx.passwordReset.delete({ where: { email } });
+    if (existing.resendCount >= 8) {
+      const err = new Error('Too many resend requests. Please try again later.');
+      err.status = 429;
+      throw err;
+    }
+  }
+
+  const code = generateOtpCode();
+  const codeHash = hashOtp(code);
+  const expiresAt = new Date(Date.now() + OTP_TTL_MS);
+
+  await prisma.passwordReset.upsert({
+    where: { email },
+    update: {
+      codeHash,
+      codeExpiresAt: expiresAt,
+      attempts: 0,
+      resendCount: { increment: 1 },
+      lastSentAt: new Date(),
+    },
+    create: {
+      email,
+      codeHash,
+      codeExpiresAt: expiresAt,
+      attempts: 0,
+      resendCount: 0,
+      lastSentAt: new Date(),
+    },
   });
 
-  return { ok: true };
+  await sendPasswordResetCode({
+    to: email,
+    code,
+    minutes: OTP_TTL_MINUTES,
+  });
+
+  return { ok: true, expiresInSeconds: OTP_TTL_MINUTES * 60 };
 }
 
 /* ===========================
