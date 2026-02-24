@@ -23,6 +23,8 @@ model User {
 
   campaigns      Campaign[]
   chats          ChatSession[]
+    mailThread        MailThread?
+  sentMailMessages  MailMessage[] @relation("SentMailMessages")
 }
 model PendingSignup {
   id            Int      @id @default(autoincrement())
