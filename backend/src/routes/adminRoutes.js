@@ -1,5 +1,13 @@
 // backend/src/routes/adminRoutes.js
 import { Router } from 'express';
+import multer from 'multer';
+
+import {
+  getMailThreads,
+  getMailThread,
+  sendMail,
+  removeMailThread,
+} from '../controllers/adminMailController.js';
 import {
   getAllCampaigns,
   getCampaign,
@@ -31,7 +39,7 @@ import {
 import { authRequired, requireAdmin } from '../middleware/authMiddleware.js';
 
 const router = Router();
-
+const upload = multer({ storage: multer.memoryStorage() });
 // ყველა admin route → დაცულია auth + admin-ით
 router.use(authRequired, requireAdmin);
 
@@ -77,5 +85,18 @@ router.patch('/topics/reorder', reorderTopics);
 router.patch('/subtopics/reorder', reorderSubtopics);
 router.patch('/tools/reorder', reorderTools);
 router.patch('/subtools/reorder', reorderSubTools);
+// ---------- MAIL (Admin email console) ----------
+
+// left list: only threads that exist (users with at least 1 message)
+router.get('/mail/threads', getMailThreads);
+
+// thread details + messages
+router.get('/mail/threads/:id', getMailThread);
+
+// send (multipart form-data with attachments[])
+router.post('/mail/send', upload.array('attachments'), sendMail);
+
+// delete full history for a user/thread
+router.delete('/mail/threads/:id', removeMailThread);
 
 export default router;

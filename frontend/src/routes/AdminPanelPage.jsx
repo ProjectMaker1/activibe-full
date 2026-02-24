@@ -7,11 +7,14 @@ import { getBaseCountries } from '../utils/countries.js';
 import 'flag-icons/css/flag-icons.min.css';
 import Loader from '../components/Loader.jsx';
 import { getCampaignCountries } from '../utils/countries.js';
+import AdminMailPanel from '../components/AdminMailPanel.jsx';
+
 const TABS = {
   STATS: 'stats',
   REQUESTS: 'requests',
   USERS: 'users',
   CATEGORIES: 'categories',
+  MAIL: 'mail',
 };
 const baseCountryOptions = getBaseCountries();      // users country (no global/online)
 const campaignCountryOptions = getCampaignCountries(); // stats (includes global/online)
@@ -233,7 +236,13 @@ const confirmUserAction = async () => {
         >
           Categories
         </button>
-
+<button
+  type="button"
+  className={`admin-menu-item ${activeTab === TABS.MAIL ? 'active' : ''}`}
+  onClick={() => handleTabChange(TABS.MAIL)}
+>
+  Mail
+</button>
 
           </div>
         </aside>
@@ -270,6 +279,9 @@ const confirmUserAction = async () => {
           {!loading && !error && activeTab === TABS.USERS && (
             <UsersTable users={nonAdminUsers} onUserAction={openUserAction} />
           )}
+          {!loading && !error && activeTab === TABS.MAIL && (
+  <AdminMailPanel />
+)}
         </section>
       </div>
 

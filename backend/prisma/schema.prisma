@@ -190,3 +190,33 @@ enum MediaSourceType {
   OWN
   EXTERNAL
 }
+model MailThread {
+  id            Int          @id @default(autoincrement())
+  userId        Int          @unique
+  userEmail     String
+  lastMessageAt DateTime     @default(now())
+  createdAt     DateTime     @default(now())
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages      MailMessage[]
+
+  @@index([lastMessageAt])
+}
+
+model MailMessage {
+  id               Int       @id @default(autoincrement())
+  threadId         Int
+  fromEmail        String
+  toEmail          String
+  subject          String
+  text             String
+  provider         String    @default("RESEND")
+  providerMessageId String?
+  sentByAdminId    Int?
+  createdAt        DateTime  @default(now())
+
+  thread           MailThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  sentByAdmin      User?      @relation(fields: [sentByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([threadId, createdAt])
+}
