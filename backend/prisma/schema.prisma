@@ -9,22 +9,23 @@ datasource db {
 }
 
 model User {
-  id             Int           @id @default(autoincrement())
-  email          String        @unique
-  password       String
-  role           Role          @default(USER)
-  createdAt      DateTime      @default(now())
-  country        String?
-  username       String        @unique
-  isBlocked      Boolean       @default(false)
-  badges         Int           @default(0)
-  lastSeenBadges Int           @default(0)
-  isEmailVerified Boolean       @default(true) // ✅ NEW
+  id              Int      @id @default(autoincrement())
+  email           String   @unique
+  password        String
+  role            Role     @default(USER)
+  createdAt       DateTime @default(now())
+  country         String?
+  username        String   @unique
+  isBlocked       Boolean  @default(false)
+  badges          Int      @default(0)
+  lastSeenBadges  Int      @default(0)
+  isEmailVerified Boolean  @default(true)
 
-  campaigns      Campaign[]
-  chats          ChatSession[]
-    mailThread        MailThread?
-  sentMailMessages  MailMessage[] @relation("SentMailMessages")
+  campaigns       Campaign[]
+  chats           ChatSession[]
+
+  mailThread       MailThread?
+  sentMailMessages MailMessage[] @relation("SentMailMessages")
 }
 model PendingSignup {
   id            Int      @id @default(autoincrement())
