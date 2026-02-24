@@ -219,7 +219,6 @@ model MailMessage {
   createdAt        DateTime  @default(now())
 
   thread           MailThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  sentByAdmin      User?      @relation(fields: [sentByAdminId], references: [id], onDelete: SetNull)
-
+  sentByAdmin      User?      @relation("SentMailMessages", fields: [sentByAdminId], references: [id], onDelete: SetNull)
   @@index([threadId, createdAt])
 }
