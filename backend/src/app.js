@@ -29,7 +29,7 @@ app.use(
     credentials: true,
   })
 );
-
+app.options('*', cors()); // ✅ ADD THIS
 
 // ❗ JSON/URL-encoded body parsers – აუცილებლად ROUTES-ზე ზემოთ
 app.use(express.json());
