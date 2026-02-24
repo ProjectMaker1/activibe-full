@@ -25,7 +25,10 @@ function fileSize(n) {
 
 export default function AdminMailPanel() {
   const { tokens } = useAuth();
-
+useEffect(() => {
+  console.log('[MAIL] accessToken exists?', !!tokens?.accessToken);
+  console.log('[MAIL] accessToken preview:', tokens?.accessToken ? tokens.accessToken.slice(0, 20) + '...' : null);
+}, [tokens?.accessToken]);
   const [threads, setThreads] = useState([]);
   const [threadsLoading, setThreadsLoading] = useState(false);
   const [threadsError, setThreadsError] = useState(null);
