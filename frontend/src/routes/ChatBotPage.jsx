@@ -151,10 +151,25 @@ const openMentorVideoFullscreen = () => {
   const video = mentorVideoRef.current;
   if (!video) return;
 
-  // თუ უკვე fullscreen-ია, აღარ ვაკეთებთ არაფერს
-const isFs = document.fullscreenElement || document.webkitFullscreenElement;
-if (isFs) return;
-  // Desktop fullscreen
+  // ✅ iOS Safari: Fullscreen API ხშირად არ მუშაობს ვიდეოზე,
+  // მაგრამ აქვს სპეციალური video.webkitEnterFullscreen()
+  if (typeof video.webkitEnterFullscreen === 'function') {
+    try {
+      // play 먼저 (თუ ჯერ არ უკრავს) — iOS-ზე fullscreen მხოლოდ user-gesture-ზე მუშაობს
+      const p = video.play?.();
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+      video.webkitEnterFullscreen();
+      return;
+    } catch (e) {
+      // თუ რამე მოხდა, ქვემოთ fallback სცადოს
+    }
+  }
+
+  // ✅ სხვა ბრაუზერები (Android/desktop)
+  const isFs =
+    document.fullscreenElement || document.webkitFullscreenElement;
+  if (isFs) return;
+
   const req =
     video.requestFullscreen ||
     video.webkitRequestFullscreen ||
@@ -162,10 +177,15 @@ if (isFs) return;
     video.msRequestFullscreen;
 
   if (req) {
-    req.call(video);
-    // optional: start playing automatically
-    video.play?.().catch(() => {});
+    try {
+      req.call(video);
+    } catch (e) {
+      // ignore
+    }
   }
+
+  const p2 = video.play?.();
+  if (p2 && typeof p2.catch === 'function') p2.catch(() => {});
 };
   /* ---------- Helper: normalize chat from backend ---------- */
 const normalizeChat = (raw) => {
@@ -996,6 +1016,7 @@ className={`chatbot-chat-message ${
 <div
   className="mentor-video-wrapper"
   onClick={openMentorVideoFullscreen}
+  onTouchStart={openMentorVideoFullscreen}
   role="button"
   tabIndex={0}
   onKeyDown={(e) => {
