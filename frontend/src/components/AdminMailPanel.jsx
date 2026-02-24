@@ -23,12 +23,15 @@ function fileSize(n) {
   return `${mb.toFixed(1)} MB`;
 }
 
+function isValidEmail(email) {
+  const s = String(email || '').trim();
+  // simple, robust enough for UI validation
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+}
+
 export default function AdminMailPanel() {
   const { tokens } = useAuth();
-useEffect(() => {
-  console.log('[MAIL] accessToken exists?', !!tokens?.accessToken);
-  console.log('[MAIL] accessToken preview:', tokens?.accessToken ? tokens.accessToken.slice(0, 20) + '...' : null);
-}, [tokens?.accessToken]);
+
   const [threads, setThreads] = useState([]);
   const [threadsLoading, setThreadsLoading] = useState(false);
   const [threadsError, setThreadsError] = useState(null);
@@ -39,6 +42,7 @@ useEffect(() => {
   const [threadError, setThreadError] = useState(null);
 
   const [composerOpen, setComposerOpen] = useState(false);
+  const [manualTo, setManualTo] = useState(''); // ✅ NEW: for first email (no history)
   const [subject, setSubject] = useState('');
   const [text, setText] = useState('');
   const [files, setFiles] = useState([]);
@@ -56,6 +60,8 @@ useEffect(() => {
   }, []);
 
   const [mobileView, setMobileView] = useState('list'); // 'list' | 'thread'
+
+  const fixedFrom = 'ActiVibe <support@activibe.net>';
 
   // Load threads (left list)
   useEffect(() => {
@@ -113,38 +119,59 @@ useEffect(() => {
   }, [threads, query]);
 
   const selectedUserEmail = thread?.userEmail || null;
-  const fixedFrom = 'ActiVibe <support@activibe.net>';
 
   const openThread = (id) => {
     setSelectedThreadId(id);
     setComposerOpen(false);
     setSendError(null);
     setSendOk(null);
+    // when thread is opened, manualTo should not be used
+    setManualTo('');
     if (isMobile) setMobileView('thread');
   };
 
-  const backToListMobile = () => {
-    setMobileView('list');
+  const backToListMobile = () => setMobileView('list');
+
+  const resetComposer = () => {
+    setSubject('');
+    setText('');
+    setFiles([]);
+    setSendError(null);
+    setSendOk(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  // ✅ NEW: open composer even when no threads exist
   const startNewMail = () => {
     setComposerOpen(true);
     setSendError(null);
     setSendOk(null);
-    setSubject('');
-    setText('');
-    setFiles([]);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    resetComposer();
+
+    // If no customer selected, keep manualTo available
+    if (!selectedThreadId) {
+      // keep whatever admin typed previously
+      if (isMobile) setMobileView('thread');
+    }
+  };
+
+  // ✅ NEW: “Compose first email” shortcut (clears selection)
+  const startNewMailManual = () => {
+    setSelectedThreadId(null);
+    setThread(null);
+    setComposerOpen(true);
+    setSendError(null);
+    setSendOk(null);
+    resetComposer();
+    if (isMobile) setMobileView('thread');
   };
 
   const onPickFiles = (e) => {
     const picked = Array.from(e.target.files || []);
     if (!picked.length) return;
 
-    // append (do not replace)
     setFiles((prev) => {
       const merged = [...prev, ...picked];
-      // avoid exact duplicates by name+size+lastModified
       const seen = new Set();
       const uniq = [];
       for (const f of merged) {
@@ -174,13 +201,11 @@ useEffect(() => {
     }
   };
 
-  const refreshThread = async () => {
-    if (!tokens?.accessToken || !selectedThreadId) return;
+  const refreshThread = async (idOverride) => {
+    const tid = idOverride || selectedThreadId;
+    if (!tokens?.accessToken || !tid) return;
     try {
-      const res = await apiRequest(
-        `/admin/mail/threads/${selectedThreadId}`,
-        withAuth(tokens.accessToken)
-      );
+      const res = await apiRequest(`/admin/mail/threads/${tid}`, withAuth(tokens.accessToken));
       setThread(res?.thread || null);
     } catch (err) {
       console.error(err);
@@ -189,8 +214,15 @@ useEffect(() => {
 
   const sendMail = async () => {
     if (!tokens?.accessToken) return;
-    if (!selectedUserEmail) {
-      setSendError('Select a customer first.');
+
+    const toEmail = selectedUserEmail || String(manualTo || '').trim();
+
+    if (!toEmail) {
+      setSendError('Please enter a recipient email.');
+      return;
+    }
+    if (!isValidEmail(toEmail)) {
+      setSendError('Please enter a valid email address.');
       return;
     }
     if (!String(subject || '').trim() || !String(text || '').trim()) {
@@ -203,32 +235,52 @@ useEffect(() => {
     setSendOk(null);
 
     const fd = new FormData();
-    fd.append('to', selectedUserEmail);
+    fd.append('to', toEmail);
     fd.append('subject', subject.trim());
     fd.append('text', text.trim());
+
+    // Only attach threadId when we have it
     if (selectedThreadId) fd.append('threadId', String(selectedThreadId));
 
     for (const f of files) {
-      fd.append('attachments', f); // IMPORTANT: must match backend upload.array('attachments')
+      fd.append('attachments', f); // must match backend upload.array('attachments')
     }
 
     try {
-      await apiRequest('/admin/mail/send', withAuth(tokens.accessToken, { method: 'POST', body: fd }));
+      const res = await apiRequest(
+        '/admin/mail/send',
+        withAuth(tokens.accessToken, { method: 'POST', body: fd })
+      );
 
       setSendOk('Email sent successfully.');
       setComposerOpen(false);
-      setSubject('');
-      setText('');
-      setFiles([]);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      setManualTo(''); // ✅ clear manual recipient after send
+      resetComposer();
 
-      await Promise.all([refreshThread(), refreshThreads()]);
+      // If backend returns created thread id, select it so history opens immediately
+      const newThreadId =
+        res?.threadId ||
+        res?.thread?.id ||
+        res?.mailThreadId ||
+        null;
+
+      await refreshThreads();
+
+      if (newThreadId) {
+        setSelectedThreadId(Number(newThreadId));
+        if (isMobile) setMobileView('thread');
+        await refreshThread(Number(newThreadId));
+      } else {
+        // fallback: if we already had a thread selected, refresh it
+        await refreshThread();
+      }
     } catch (err) {
       console.error(err);
-
-      // Professional attachment size message already comes as 413 from backend
       if (err?.status === 413) {
-        setSendError(err.message || 'Attachment too large. Please use a smaller file or remove some attachments.');
+        setSendError(
+          err.message ||
+            'Attachment too large. Please use a smaller file or remove some attachments.'
+        );
       } else {
         setSendError(err.message || 'Failed to send email.');
       }
@@ -268,7 +320,9 @@ useEffect(() => {
       <div className="av-mail-header">
         <div>
           <h2 className="av-mail-title">Mail</h2>
-          <p className="av-mail-subtitle">Send professional emails from the admin panel and keep history per customer.</p>
+          <p className="av-mail-subtitle">
+            Send professional emails from the admin panel and keep history per customer.
+          </p>
         </div>
 
         <div className="av-mail-search">
@@ -315,6 +369,13 @@ useEffect(() => {
               <div className="av-mail-empty-text">
                 Customers will appear here after you send at least one email.
               </div>
+
+              {/* ✅ NEW: allow first email */}
+              <div style={{ marginTop: 14 }}>
+                <button type="button" className="av-mail-primary wide" onClick={startNewMailManual}>
+                  Compose first email
+                </button>
+              </div>
             </div>
           )}
 
@@ -330,9 +391,7 @@ useEffect(() => {
                     onClick={() => openThread(t.id)}
                   >
                     <div className="av-mail-thread-top">
-                      <div className="av-mail-thread-name">
-                        {t.username || t.userEmail}
-                      </div>
+                      <div className="av-mail-thread-name">{t.username || t.userEmail}</div>
                       <div className="av-mail-thread-time">
                         {t.lastSentAt ? fmtDateTime(t.lastSentAt) : ''}
                       </div>
@@ -361,7 +420,13 @@ useEffect(() => {
             )}
 
             <div className="av-mail-right-title">
-              {thread?.username ? thread.username : thread?.userEmail ? thread.userEmail : 'Select a customer'}
+              {thread?.username
+                ? thread.username
+                : thread?.userEmail
+                ? thread.userEmail
+                : composerOpen
+                ? 'New email'
+                : 'Select a customer'}
             </div>
 
             <div className="av-mail-right-actions">
@@ -370,11 +435,11 @@ useEffect(() => {
                   Delete history
                 </button>
               )}
-              {!!selectedThreadId && (
-                <button type="button" className="av-mail-primary" onClick={startNewMail}>
-                  New mail
-                </button>
-              )}
+
+              {/* ✅ NEW: show New mail always */}
+              <button type="button" className="av-mail-primary" onClick={startNewMail}>
+                New mail
+              </button>
             </div>
           </div>
 
@@ -390,27 +455,27 @@ useEffect(() => {
             </div>
           )}
 
-          {!threadLoading && !threadError && !thread && (
+          {/* ✅ If no thread selected, show composer only when open */}
+          {!threadLoading && !threadError && !thread && !composerOpen && (
             <div className="av-mail-empty">
               <div className="av-mail-empty-title">Choose a customer</div>
               <div className="av-mail-empty-text">
                 Select a customer from the list to see message history and send a new email.
               </div>
+
+              <div style={{ marginTop: 14 }}>
+                <button type="button" className="av-mail-primary wide" onClick={startNewMailManual}>
+                  Compose new email
+                </button>
+              </div>
             </div>
           )}
 
+          {/* ✅ When thread exists, show history + CTA + composer */}
           {!threadLoading && !threadError && thread && (
             <>
-              {sendOk && (
-                <div className="av-mail-toast ok">
-                  {sendOk}
-                </div>
-              )}
-              {sendError && (
-                <div className="av-mail-toast err">
-                  {sendError}
-                </div>
-              )}
+              {sendOk && <div className="av-mail-toast ok">{sendOk}</div>}
+              {sendError && <div className="av-mail-toast err">{sendError}</div>}
 
               <div className="av-mail-messages">
                 {(thread.messages || []).map((m) => (
@@ -425,9 +490,7 @@ useEffect(() => {
                       <span className="pill">To: {m.toEmail}</span>
                     </div>
 
-                    <div className="av-mail-message-body">
-                      {m.text}
-                    </div>
+                    <div className="av-mail-message-body">{m.text}</div>
                   </div>
                 ))}
               </div>
@@ -439,96 +502,112 @@ useEffect(() => {
                   </button>
                 </div>
               )}
+            </>
+          )}
 
-              {composerOpen && (
-                <div className="av-mail-composer">
-                  <div className="av-mail-composer-row">
-                    <label>From</label>
-                    <div className="av-mail-readonly">{fixedFrom}</div>
-                  </div>
+          {/* ✅ Composer (works for both: selected thread OR manual) */}
+          {composerOpen && (
+            <>
+              {sendOk && <div className="av-mail-toast ok">{sendOk}</div>}
+              {sendError && <div className="av-mail-toast err">{sendError}</div>}
 
-                  <div className="av-mail-composer-row">
-                    <label>To</label>
+              <div className="av-mail-composer" style={{ marginTop: thread ? 0 : 12 }}>
+                <div className="av-mail-composer-row">
+                  <label>From</label>
+                  <div className="av-mail-readonly">{fixedFrom}</div>
+                </div>
+
+                <div className="av-mail-composer-row">
+                  <label>To</label>
+
+                  {selectedUserEmail ? (
                     <div className="av-mail-readonly">{selectedUserEmail}</div>
-                  </div>
-
-                  <div className="av-mail-composer-row">
-                    <label>Subject</label>
+                  ) : (
                     <input
                       className="av-mail-input"
-                      value={subject}
-                      onChange={(e) => setSubject(e.target.value)}
-                      placeholder="Subject"
-                      maxLength={180}
+                      value={manualTo}
+                      onChange={(e) => setManualTo(e.target.value)}
+                      placeholder="customer@example.com"
+                      maxLength={254}
                     />
-                  </div>
+                  )}
+                </div>
 
-                  <div className="av-mail-composer-row">
-                    <label>Message</label>
-                    <textarea
-                      className="av-mail-textarea"
-                      value={text}
-                      onChange={(e) => setText(e.target.value)}
-                      placeholder="Write your message..."
-                      rows={7}
-                    />
-                  </div>
+                <div className="av-mail-composer-row">
+                  <label>Subject</label>
+                  <input
+                    className="av-mail-input"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="Subject"
+                    maxLength={180}
+                  />
+                </div>
 
-                  <div className="av-mail-composer-row">
-                    <label>Attachments</label>
-                    <div className="av-mail-attach">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        onChange={onPickFiles}
-                      />
-                      <div className="av-mail-attach-hint">
-                        If an attachment is too large, you’ll see a message after sending.
-                      </div>
+                <div className="av-mail-composer-row">
+                  <label>Message</label>
+                  <textarea
+                    className="av-mail-textarea"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    placeholder="Write your message..."
+                    rows={7}
+                  />
+                </div>
 
-                      {files.length > 0 && (
-                        <div className="av-mail-file-list">
-                          {files.map((f, idx) => (
-                            <div key={`${f.name}-${f.size}-${f.lastModified}`} className="av-mail-file">
-                              <div className="av-mail-file-name">{f.name}</div>
-                              <div className="av-mail-file-size">{fileSize(f.size)}</div>
-                              <button
-                                type="button"
-                                className="av-mail-file-remove"
-                                onClick={() => removeFile(idx)}
-                                title="Remove"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                <div className="av-mail-composer-row">
+                  <label>Attachments</label>
+                  <div className="av-mail-attach">
+                    <input ref={fileInputRef} type="file" multiple onChange={onPickFiles} />
+                    <div className="av-mail-attach-hint">
+                      If an attachment is too large, you’ll see a message after sending.
                     </div>
-                  </div>
 
-                  <div className="av-mail-composer-actions">
-                    <button
-                      type="button"
-                      className="btn-secondary"
-                      onClick={() => setComposerOpen(false)}
-                      disabled={sending}
-                    >
-                      Cancel
-                    </button>
-
-                    <button
-                      type="button"
-                      className="av-mail-primary"
-                      onClick={sendMail}
-                      disabled={sending}
-                    >
-                      {sending ? 'Sending...' : 'Send'}
-                    </button>
+                    {files.length > 0 && (
+                      <div className="av-mail-file-list">
+                        {files.map((f, idx) => (
+                          <div key={`${f.name}-${f.size}-${f.lastModified}`} className="av-mail-file">
+                            <div className="av-mail-file-name">{f.name}</div>
+                            <div className="av-mail-file-size">{fileSize(f.size)}</div>
+                            <button
+                              type="button"
+                              className="av-mail-file-remove"
+                              onClick={() => removeFile(idx)}
+                              title="Remove"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
+
+                <div className="av-mail-composer-actions">
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => {
+                      setComposerOpen(false);
+                      setSendError(null);
+                      setSendOk(null);
+                    }}
+                    disabled={sending}
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    type="button"
+                    className="av-mail-primary"
+                    onClick={sendMail}
+                    disabled={sending}
+                  >
+                    {sending ? 'Sending...' : 'Send'}
+                  </button>
+                </div>
+              </div>
             </>
           )}
         </section>
