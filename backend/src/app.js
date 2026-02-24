@@ -37,7 +37,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', message: 'ActiVibe API is running' });
+  res.json({ status: 'ok', message: 'ActiVibe API is running (MAIL PATCH v1)' });
 });
 
 // Routes

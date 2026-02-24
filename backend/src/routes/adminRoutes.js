@@ -37,7 +37,7 @@ import {
 } from '../controllers/adminController.js';
 
 import { authRequired, requireAdmin } from '../middleware/authMiddleware.js';
-
+console.log('✅ ADMIN ROUTES LOADED (MAIL PATCH v1)');
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 // ყველა admin route → დაცულია auth + admin-ით
