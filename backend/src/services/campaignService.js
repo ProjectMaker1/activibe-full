@@ -166,8 +166,9 @@ export async function setCampaignStatus(id, status) {
       data: { status },
     });
 
-    // badges increment მხოლოდ იმ შემთხვევაში, რაც აქამდე გქონდა
-    let badgesAfter = existing?.createdBy?.badges ?? null;
+
+        // --- reward logic (cycle: 1=BADGE, 2=CERTIFICATE, 3=VOUCHER) ---
+    let rewardType = null; // 'BADGE' | 'CERTIFICATE' | 'VOUCHER' | null
 
     if (
       existing.status === 'PENDING' &&
@@ -175,15 +176,63 @@ export async function setCampaignStatus(id, status) {
       existing.createdBy &&
       existing.createdBy.role !== 'ADMIN'
     ) {
-      const u = await tx.user.update({
-        where: { id: existing.createdBy.id },
-        data: { badges: { increment: 1 } },
-        select: { badges: true },
+      // count approved campaigns AFTER this approve
+      const approvedCount = await tx.campaign.count({
+        where: {
+          createdById: existing.createdBy.id,
+          status: 'APPROVED',
+        },
       });
-      badgesAfter = u.badges;
+
+      const mod = approvedCount % 3;
+
+      if (mod === 1) {
+        // 1st in cycle -> Badge
+        rewardType = 'BADGE';
+        await tx.user.update({
+          where: { id: existing.createdBy.id },
+          data: {
+            rewardStage: 'BADGE',
+            rewardVersion: { increment: 1 },
+            // legacy fields (not used later, but keeps UI stable until frontend update)
+            badges: 1,
+          },
+        });
+      } else if (mod === 2) {
+        // 2nd in cycle -> Certificate (badge removed)
+        rewardType = 'CERTIFICATE';
+        await tx.user.update({
+          where: { id: existing.createdBy.id },
+          data: {
+            rewardStage: 'CERTIFICATE',
+            rewardVersion: { increment: 1 },
+            badges: 0,
+          },
+        });
+      } else {
+        // 3rd in cycle -> Voucher (certificate removed)
+        rewardType = 'VOUCHER';
+
+        await tx.voucher.create({
+          data: {
+            userId: existing.createdBy.id,
+            amountEur: 50,
+            status: 'UNPAID',
+          },
+        });
+
+        await tx.user.update({
+          where: { id: existing.createdBy.id },
+          data: {
+            rewardStage: null,
+            rewardVersion: { increment: 1 },
+            badges: 0,
+          },
+        });
+      }
     }
 
-    return { existing, updated, badgesAfter };
+    return { existing, updated, rewardType };
   });
 
   // ✅ სწორი ადგილი: result უკვე არსებობს აქ
@@ -196,15 +245,14 @@ export async function setCampaignStatus(id, status) {
   });
 
   // 2) Email ტრანზაქციის გარეთ
-  const { existing, updated, badgesAfter } = result;
-
+  const { existing, updated, rewardType } = result;
   console.log('DECISION EMAIL DEBUG', {
     to: existing?.createdBy?.email,
     role: existing?.createdBy?.role,
     status,
     campaignId: updated?.id,
     title: updated?.title,
-    badgesAfter,
+    rewardType,
   });
 
   // user-ს ვწერთ მხოლოდ მაშინ, როცა ADMIN-ის campaign არ არის და აქვს email
@@ -215,7 +263,7 @@ export async function setCampaignStatus(id, status) {
         campaignId: updated.id,
         title: updated.title,
         status,
-        badges: badgesAfter, // ✅ badge count გადადის email-ში
+        rewardType, // 'BADGE' | 'CERTIFICATE' | 'VOUCHER' | null
       })
         .then((r) => console.log('decision email sent:', r))
         .catch((e) => {

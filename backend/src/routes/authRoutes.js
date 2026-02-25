@@ -5,6 +5,7 @@ import {
   refresh,
   me,
   markBadgesSeen,
+  markRewardsSeen,
   verifyEmail,
   resendVerification,
   forgotPassword,
@@ -25,5 +26,6 @@ router.post('/auth/login', login);
 router.post('/auth/refresh', refresh);
 router.get('/auth/me', authRequired, me);
 router.post('/auth/badges/seen', authRequired, markBadgesSeen);
+router.post('/auth/rewards/seen', authRequired, markRewardsSeen);
 
 export default router;

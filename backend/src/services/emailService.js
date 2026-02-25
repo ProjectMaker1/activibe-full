@@ -339,7 +339,7 @@ export async function sendCampaignDecisionToUser({
   campaignId,
   title,
   status,
-  badges,
+  rewardType, // 'BADGE' | 'CERTIFICATE' | 'VOUCHER' | null
 }) {
   mustEnv(process.env.RESEND_API_KEY, 'RESEND_API_KEY');
 
@@ -351,12 +351,20 @@ export async function sendCampaignDecisionToUser({
 
   // ✅ badge image from your frontend public folder
   const badgeImgUrl = `${FRONTEND_URL}/badge.png`;
+  const certificateImgUrl = `${FRONTEND_URL}/Certificate.png`;
+  const isRewardApproved = status === 'APPROVED' && (rewardType === 'BADGE' || rewardType === 'CERTIFICATE' || rewardType === 'VOUCHER');
 
   const subject = isApproved
-    ? 'Your campaign has been approved'
+    ? rewardType === 'BADGE'
+      ? 'Your campaign has been approved — Badge awarded'
+      : rewardType === 'CERTIFICATE'
+        ? 'Your campaign has been approved — Certificate awarded'
+        : rewardType === 'VOUCHER'
+          ? 'Your campaign has been approved — €50 reward'
+          : 'Your campaign has been approved'
     : isRejected
-    ? 'Your campaign has been rejected'
-    : 'Campaign update';
+      ? 'Your campaign has been rejected'
+      : 'Campaign update';
 
   const subtitle = isApproved
     ? 'Thank you for contributing to ActiVibe.'
@@ -364,12 +372,23 @@ export async function sendCampaignDecisionToUser({
     ? 'Thank you for your submission.'
     : 'Your campaign has been reviewed.';
 
-  const badgesLine =
-    typeof badges === 'number'
+  const rewardLine =
+    isApproved && rewardType === 'BADGE'
       ? `<div style="margin-top:10px; color:#0F172A; font-size:13px;">
-           You now have <strong>${badges}</strong> badge${badges === 1 ? '' : 's'}.
+           You have been awarded a <strong>Badge</strong>.
          </div>`
-      : '';
+      : isApproved && rewardType === 'CERTIFICATE'
+        ? `<div style="margin-top:10px; color:#0F172A; font-size:13px;">
+             Your <strong>Badge</strong> has been upgraded to a <strong>Certificate</strong>.
+           </div>`
+        : isApproved && rewardType === 'VOUCHER'
+          ? `<div style="margin-top:10px; color:#0F172A; font-size:13px;">
+               Congratulations! Your campaign has been approved for the third time, and you will receive €50.
+             </div>
+             <div style="margin-top:10px; color:#0F172A; font-size:13px;">
+               The ActiVibe team will contact you regarding the payment. Please check your email over the next few days for further details.
+             </div>`
+          : '';
 
   const rejectHelp = `
     <div style="margin-top:10px; color:#64748B; font-size:13px;">
@@ -380,15 +399,22 @@ export async function sendCampaignDecisionToUser({
     </div>
   `;
 
+  const approvedHero =
+    rewardType === 'BADGE'
+      ? heroImage(badgeImgUrl, 'Badge')
+      : rewardType === 'CERTIFICATE'
+        ? heroImage(certificateImgUrl, 'Certificate')
+        : '';
+
   const approvedBody = `
-    ${heroImage(badgeImgUrl, 'Badge')}
+    ${approvedHero}
     <div style="padding:14px 16px; border:1px solid #E2E8F0; border-radius:14px; background:#F8FAFC;">
       ${keyValueRow('Status', 'Approved')}
       ${keyValueRow('Campaign', title || `#${campaignId}`)}
       <div style="margin-top:10px; color:#64748B; font-size:13px;">
         Your campaign is now visible on ActiVibe. You can open it using the button below.
       </div>
-      ${badgesLine}
+      ${rewardLine}
     </div>
   `;
 
@@ -427,7 +453,11 @@ export async function sendCampaignDecisionToUser({
   const textLines = [
     isApproved ? 'Your campaign has been approved.' : isRejected ? 'Your campaign has been rejected.' : 'Your campaign has been updated.',
     `Campaign: ${title || `#${campaignId}`}`,
-    typeof badges === 'number' && isApproved ? `You now have ${badges} badge${badges === 1 ? '' : 's'}.` : null,
+    isApproved && rewardType === 'BADGE' ? 'You have been awarded a Badge.' : null,
+    isApproved && rewardType === 'CERTIFICATE' ? 'Your Badge has been upgraded to a Certificate.' : null,
+    isApproved && rewardType === 'VOUCHER'
+      ? 'Congratulations! Your campaign has been approved for the third time, and you will receive €50.\nThe ActiVibe team will contact you regarding the payment. Please check your email over the next few days for further details.'
+      : null,
     isRejected ? `For the reason, contact: ${SUPPORT_EMAIL}` : null,
     '',
     isRejected ? `View campaigns:` : `Open:`,

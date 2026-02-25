@@ -12,8 +12,7 @@ export function AuthProvider({ children }) {
     refreshToken: null,
   });
   const [loading, setLoading] = useState(true);
-  const [hasNewBadge, setHasNewBadge] = useState(false);
-
+  const [hasNewReward, setHasNewReward] = useState(false);
   // initial load from localStorage
   useEffect(() => {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -32,21 +31,18 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  // check for new badge (user.badges > user.lastSeenBadges)
+  // check for new reward (user.rewardVersion > user.lastSeenRewardVersion)
   useEffect(() => {
     if (!user) {
-      setHasNewBadge(false);
+      setHasNewReward(false);
       return;
     }
 
-    const badges = user.badges ?? 0;
-    const lastSeen = user.lastSeenBadges ?? 0;
+    const v = user.rewardVersion ?? 0;
+    const last = user.lastSeenRewardVersion ?? 0;
 
-    if (badges > lastSeen) {
-      setHasNewBadge(true);
-    } else {
-      setHasNewBadge(false);
-    }
+    if (v > last) setHasNewReward(true);
+    else setHasNewReward(false);
   }, [user]);
 
   const saveSession = (data) => {
@@ -184,7 +180,7 @@ const resetPassword = async (email, code, newPassword) => {
     localStorage.removeItem(STORAGE_KEY);
     setUser(null);
     setTokens({ accessToken: null, refreshToken: null });
-    setHasNewBadge(false);
+    setHasNewReward(false);
   };
 
   const refreshMe = async () => {
@@ -255,6 +251,41 @@ const resetPassword = async (email, code, newPassword) => {
     }
   };
 
+    const markRewardsSeen = async () => {
+    if (!tokens.accessToken) return;
+
+    try {
+      const res = await apiRequest('/auth/rewards/seen', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${tokens.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              lastSeenRewardVersion: res.lastSeenRewardVersion,
+            }
+          : prev
+      );
+
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.user) {
+          parsed.user.lastSeenRewardVersion = res.lastSeenRewardVersion;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+        }
+      }
+
+      setHasNewReward(false);
+    } catch (err) {
+      console.error('Failed to mark rewards as seen', err);
+    }
+  };
   const value = {
     user,
     tokens,
@@ -270,8 +301,9 @@ const resetPassword = async (email, code, newPassword) => {
     refreshMe,
     isAuthenticated: !!user,
     isAdmin: user?.role === 'ADMIN',
-    hasNewBadge,
-    markBadgesSeen,
+    hasNewReward,
+    markRewardsSeen,
+
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

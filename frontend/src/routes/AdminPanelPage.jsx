@@ -483,6 +483,7 @@ function UsersTable({ users, onUserAction }) {
         <span>Country</span>
         <span>Registered</span>
         <span>Campaign stats</span>
+        <span>Rewards</span>
         <span>Actions</span>
       </div>
 
@@ -512,6 +513,16 @@ const countryMeta = getCountryMeta(u.country, baseCountryOptions);
             <span>
               Total: {u.totalCampaigns} · Approved: {u.approvedCampaigns} · Rejected:{' '}
               {u.rejectedCampaigns}
+            </span>
+
+            <span>
+              {u?.unpaidVoucherCount > 0
+                ? `Voucher · ${u.unpaidVoucherCount} pending`
+                : u?.rewardStage === 'CERTIFICATE'
+                  ? 'Certificate'
+                  : u?.rewardStage === 'BADGE'
+                    ? 'Badge'
+                    : '—'}
             </span>
 
             <span className="admin-table-users-actions">

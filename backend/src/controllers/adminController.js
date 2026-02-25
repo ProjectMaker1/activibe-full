@@ -52,22 +52,44 @@ export async function removeCampaign(req, res, next) {
   }
 }
 
-// Users + სტატისტიკა
 export async function getUsersWithStats(req, res, next) {
   try {
     const users = await prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
-      include: {
-        campaigns: {
-          select: { id: true, status: true },
-        },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        country: true,
+        isBlocked: true,
+        createdAt: true,
+        role: true,
+        rewardStage: true,
+        rewardVersion: true,
+        lastSeenRewardVersion: true,
       },
     });
 
+    // unpaid voucher counts for all users (efficient aggregation)
+    const voucherAgg = await prisma.voucher.groupBy({
+      by: ['userId'],
+      where: { status: 'UNPAID' },
+      _count: { _all: true },
+    });
+
+    const voucherCountMap = new Map(voucherAgg.map((v) => [v.userId, v._count._all]));
+
     const result = users.map((u) => {
-      const total = u.campaigns.length;
-      const approved = u.campaigns.filter((c) => c.status === 'APPROVED').length;
-      const rejected = u.campaigns.filter((c) => c.status === 'REJECTED').length;
+      const unpaidVouchers = voucherCountMap.get(u.id) || 0;
+
+      let rewardLabel = '—';
+      if (unpaidVouchers > 0) {
+        rewardLabel = `${unpaidVouchers} pcs 50euro voucher`;
+      } else if (u.rewardStage === 'BADGE') {
+        rewardLabel = 'Own Badge';
+      } else if (u.rewardStage === 'CERTIFICATE') {
+        rewardLabel = 'Own Certificate';
+      }
 
       return {
         id: u.id,
@@ -77,9 +99,9 @@ export async function getUsersWithStats(req, res, next) {
         isBlocked: u.isBlocked,
         createdAt: u.createdAt,
         role: u.role,
-        totalCampaigns: total,
-        approvedCampaigns: approved,
-        rejectedCampaigns: rejected,
+
+        rewardLabel,
+        unpaidVouchers,
       };
     });
 
@@ -183,6 +205,25 @@ export async function deleteUser(req, res, next) {
     await prisma.user.delete({ where: { id } });
 
     res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+}
+export async function markUserVouchersPaid(req, res, next) {
+  try {
+    const userId = Number(req.params.id);
+    if (!userId || Number.isNaN(userId)) {
+      return res.status(400).json({ message: 'Invalid user id' });
+    }
+
+    const now = new Date();
+
+    const updated = await prisma.voucher.updateMany({
+      where: { userId, status: 'UNPAID' },
+      data: { status: 'PAID', paidAt: now },
+    });
+
+    res.json({ success: true, paidCount: updated.count });
   } catch (err) {
     next(err);
   }

@@ -19,6 +19,7 @@ import {
   blockUser,
   unblockUser,
   deleteUser,
+  markUserVouchersPaid,
   // 👇 ახალი კონტროლერები
   getCategories,
   createTopic,
@@ -99,4 +100,6 @@ router.post('/mail/send', upload.array('attachments'), sendMail);
 // delete full history for a user/thread
 router.delete('/mail/threads/:id', removeMailThread);
 
+// 💶 vouchers
+router.post('/users/:id/vouchers/pay', markUserVouchersPaid);
 export default router;

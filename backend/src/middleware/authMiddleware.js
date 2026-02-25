@@ -18,6 +18,10 @@ export async function authRequired(req, res, next) {
       return res.status(401).json({ message: 'User not found' });
     }
 
+const unpaidVoucherCount = await prisma.voucher.count({
+  where: { userId: user.id, status: 'UNPAID' },
+});
+
 req.user = {
   id: user.id,
   email: user.email,
@@ -25,8 +29,16 @@ req.user = {
   username: user.username,
   country: user.country,
   isBlocked: user.isBlocked,
+
+  // legacy (kept for now)
   badges: user.badges,
   lastSeenBadges: user.lastSeenBadges,
+
+  // new reward system
+  rewardStage: user.rewardStage,
+  rewardVersion: user.rewardVersion,
+  lastSeenRewardVersion: user.lastSeenRewardVersion,
+  unpaidVoucherCount,
 };
 
     next();

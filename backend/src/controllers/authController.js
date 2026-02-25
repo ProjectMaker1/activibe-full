@@ -65,6 +65,38 @@ export async function me(req, res, next) {
     next(err);
   }
 }
+export async function markRewardsSeen(req, res, next) {
+  try {
+    const userId = req.user.id;
+
+    const current = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { rewardVersion: true },
+    });
+
+    if (!current) {
+      const err = new Error('User not found');
+      err.status = 404;
+      throw err;
+    }
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        lastSeenRewardVersion: current.rewardVersion,
+      },
+      select: { rewardVersion: true, lastSeenRewardVersion: true },
+    });
+
+    res.json({
+      success: true,
+      rewardVersion: user.rewardVersion,
+      lastSeenRewardVersion: user.lastSeenRewardVersion,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
 // მომხმარებელმა ნახა ახალი ბეიჯი
 // მომხმარებელმა ნახა ახალი ბეიჯი
 export async function markBadgesSeen(req, res, next) {

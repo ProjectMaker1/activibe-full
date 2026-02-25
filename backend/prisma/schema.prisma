@@ -21,6 +21,11 @@ model User {
   lastSeenBadges  Int      @default(0)
   isEmailVerified Boolean  @default(true)
 
+  rewardStage      RewardStage?   // null = nothing currently (e.g. after voucher)
+  rewardVersion    Int            @default(0) // notification counter
+  lastSeenRewardVersion Int       @default(0) // seen counter (like badges)
+  vouchers         Voucher[]
+
   campaigns       Campaign[]
   chats           ChatSession[]
 
@@ -193,6 +198,16 @@ enum MediaSourceType {
   OWN
   EXTERNAL
 }
+
+enum RewardStage {
+  BADGE
+  CERTIFICATE
+}
+enum VoucherStatus {
+  UNPAID
+  PAID
+}
+
 model MailThread {
   id            Int          @id @default(autoincrement())
   userId        Int          @unique
@@ -221,4 +236,17 @@ model MailMessage {
   thread           MailThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
   sentByAdmin      User?      @relation("SentMailMessages", fields: [sentByAdminId], references: [id], onDelete: SetNull)
   @@index([threadId, createdAt])
+}
+
+model Voucher {
+  id        Int           @id @default(autoincrement())
+  userId    Int
+  amountEur Int           @default(50)
+  status    VoucherStatus @default(UNPAID)
+  createdAt DateTime      @default(now())
+  paidAt    DateTime?
+
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
 }

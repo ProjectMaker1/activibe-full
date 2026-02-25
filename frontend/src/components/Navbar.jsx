@@ -9,13 +9,13 @@ function Navbar({ theme, onToggleTheme, introActive }) {
     user,
     isAdmin,
     logout,
-    hasNewBadge,
-    markBadgesSeen,
+    hasNewReward,
+    markRewardsSeen,
   } = useAuth();
 
   const navigate = useNavigate();
 
-  const [showBadgeModal, setShowBadgeModal] = useState(false);
+  const [showRewardModal, setShowRewardModal] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [canInstall, setCanInstall] = useState(false);
   const [showIosInstall, setShowIosInstall] = useState(false);
@@ -49,17 +49,17 @@ function Navbar({ theme, onToggleTheme, introActive }) {
   }, [isStandalone]);
 
   useEffect(() => {
-    if (hasNewBadge && isAuthenticated) setShowBadgeModal(true);
-  }, [hasNewBadge, isAuthenticated]);
+    if (hasNewReward && isAuthenticated) setShowRewardModal(true);
+  }, [hasNewReward, isAuthenticated]);
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  const handleCloseBadgeModal = async () => {
-    await markBadgesSeen();
-    setShowBadgeModal(false);
+  const handleCloseRewardModal = async () => {
+    await markRewardsSeen();
+    setShowRewardModal(false);
   };
 
   const handleInstallClick = async () => {
@@ -136,14 +136,25 @@ function Navbar({ theme, onToggleTheme, introActive }) {
           {isAuthenticated && (
             <button
               type="button"
-              className={`badge-button ${hasNewBadge ? 'badge-button-pulse' : ''}`}
-              onClick={() => setShowBadgeModal(true)}
+              className={`badge-button ${hasNewReward ? 'badge-button-pulse' : ''}`}
+              onClick={() => setShowRewardModal(true)}
+              title="Rewards"
             >
-              <img src="/badge.png" alt="Badges" className="badge-icon" />
-              <span className="badge-count">{user?.badges ?? 0}</span>
+              {user?.unpaidVoucherCount > 0 ? (
+                <span style={{ fontWeight: 800, fontSize: 12 }}>€50</span>
+              ) : (
+                <img
+                  src={user?.rewardStage === 'CERTIFICATE' ? '/Certificate.png' : '/badge.png'}
+                  alt="Rewards"
+                  className="badge-icon"
+                />
+              )}
+
+              <span className="badge-count">
+                {user?.unpaidVoucherCount > 0 ? user.unpaidVoucherCount : user?.rewardStage ? 1 : 0}
+              </span>
             </button>
           )}
-
           {!standalone && (
             <button
               type="button"
@@ -204,29 +215,65 @@ function Navbar({ theme, onToggleTheme, introActive }) {
 
 <Portal>
   {/* Badge modal */}
-  {showBadgeModal && isAuthenticated && (
+  {/* Reward modal */}
+  {showRewardModal && isAuthenticated && (
     <div className="badge-modal-backdrop">
       <div className="badge-modal">
-            <div className="badge-modal-icon-wrap">
-              <img src="/badge.png" alt="Badge" className="badge-modal-icon" />
-            </div>
-            <h2 className="badge-modal-title">Campaign approved!</h2>
-            <p className="badge-modal-text">
-              Admin approved your campaign. Thanks for contributing to ActiVibe!
-            </p>
-            <p className="badge-modal-counter">
-              Total badges: <strong>{user?.badges ?? 0}</strong>
-            </p>
-            <button
-              type="button"
-              className="btn-primary badge-modal-close"
-              onClick={handleCloseBadgeModal}
-            >
-              Awesome!
-            </button>
-          </div>
+        <div className="badge-modal-icon-wrap">
+          {user?.unpaidVoucherCount > 0 ? (
+            <div style={{ fontWeight: 900, fontSize: 28, letterSpacing: 1 }}>€50</div>
+          ) : (
+            <img
+              src={user?.rewardStage === 'CERTIFICATE' ? '/Certificate.png' : '/badge.png'}
+              alt="Reward"
+              className="badge-modal-icon"
+            />
+          )}
         </div>
-      )}
+
+        {user?.unpaidVoucherCount > 0 ? (
+          <>
+            <h2 className="badge-modal-title">Congratulations!</h2>
+            <p className="badge-modal-text">
+              You have <strong>{user.unpaidVoucherCount}</strong> pending €50 voucher
+              {user.unpaidVoucherCount === 1 ? '' : 's'}.
+            </p>
+            <p className="badge-modal-text">
+              The ActiVibe team will contact you regarding the payment. Please check your email
+              over the next few days for further details.
+            </p>
+          </>
+        ) : user?.rewardStage === 'CERTIFICATE' ? (
+          <>
+            <h2 className="badge-modal-title">Certificate awarded!</h2>
+            <p className="badge-modal-text">
+              Your second approved campaign upgraded your reward to a <strong>Certificate</strong>.
+            </p>
+          </>
+        ) : user?.rewardStage === 'BADGE' ? (
+          <>
+            <h2 className="badge-modal-title">Badge awarded!</h2>
+            <p className="badge-modal-text">
+              Your campaign has been approved and you received a <strong>Badge</strong>.
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 className="badge-modal-title">All set</h2>
+            <p className="badge-modal-text">No new rewards right now.</p>
+          </>
+        )}
+
+        <button
+          type="button"
+          className="btn-primary badge-modal-close"
+          onClick={handleCloseRewardModal}
+        >
+          Awesome!
+        </button>
+      </div>
+    </div>
+  )}
 
   {/* iOS Install instructions */}
   {showIosInstall && (
