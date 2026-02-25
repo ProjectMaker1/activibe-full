@@ -83,7 +83,8 @@ function Navbar({ theme, onToggleTheme, introActive }) {
     setDeferredPrompt(null);
     setCanInstall(false);
   };
-
+  const hasAnyReward =
+    (user?.unpaidVoucherCount || 0) > 0 || !!user?.rewardStage;
   return (
     <header className="navbar">
       <div className="navbar-inner">
@@ -135,7 +136,7 @@ function Navbar({ theme, onToggleTheme, introActive }) {
 
         {/* RIGHT: actions */}
         <div className="navbar-actions">
-          {isAuthenticated && !isAdmin && (
+{isAuthenticated && !isAdmin && hasAnyReward && (
             <button
               type="button"
               className={`badge-button ${hasNewReward ? 'badge-button-pulse' : ''}`}
