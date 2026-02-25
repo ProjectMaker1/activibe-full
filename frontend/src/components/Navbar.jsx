@@ -152,9 +152,9 @@ function Navbar({ theme, onToggleTheme, introActive }) {
                 />
               )}
 
-              <span className="badge-count">
-                {user?.unpaidVoucherCount > 0 ? user.unpaidVoucherCount : user?.rewardStage ? 1 : 0}
-              </span>
+                {user?.unpaidVoucherCount > 0 && (
+                <span className="badge-count">{user.unpaidVoucherCount}</span>
+              )}
             </button>
           )}
           {!standalone && (
