@@ -1854,7 +1854,14 @@ button {
   border-color: #0c7b61;
   box-shadow: 0 12px 28px rgba(12, 123, 97, 0.55);
 }
-
+/* ✅ Fix: long chip text should NOT center on wrap (mobile + desktop) */
+.chatbot-topic-chip{
+  text-align: left;
+  display: inline-flex;
+  justify-content: flex-start;
+  max-width: 100%;
+  white-space: normal;  /* allow wrapping */
+}
 /* ქვედა ხაზი – selected info + Continue */
 
 .chatbot-footer-row {
