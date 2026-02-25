@@ -3970,3 +3970,14 @@ html, body{
   text-align: center;     /* ქვემოთ კარგად ჩანს */
   padding: 0 10px;
 }
+.admin-voucher-link{
+  background: transparent;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  font: inherit;
+}
+.admin-voucher-link:hover{
+  opacity: 0.8;
+}

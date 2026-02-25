@@ -135,7 +135,7 @@ function Navbar({ theme, onToggleTheme, introActive }) {
 
         {/* RIGHT: actions */}
         <div className="navbar-actions">
-          {isAuthenticated && (
+          {isAuthenticated && !isAdmin && (
             <button
               type="button"
               className={`badge-button ${hasNewReward ? 'badge-button-pulse' : ''}`}
@@ -218,7 +218,7 @@ function Navbar({ theme, onToggleTheme, introActive }) {
 <Portal>
   {/* Badge modal */}
   {/* Reward modal */}
-  {showRewardModal && isAuthenticated && (
+  {showRewardModal && isAuthenticated && !isAdmin && (
     <div className="badge-modal-backdrop">
         {/* Certificate fullscreen viewer (only when CERTIFICATE) */}
   {showCertificateZoom && user?.rewardStage === 'CERTIFICATE' && (

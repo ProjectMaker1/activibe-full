@@ -51,7 +51,20 @@ const handleTabChange = (tab) => {
   const [userAction, setUserAction] = useState(null);
   const [userActionLoading, setUserActionLoading] = useState(false);
   const [userActionError, setUserActionError] = useState(null);
+  // voucher pay modal
+  const [voucherAction, setVoucherAction] = useState(null); // { user }
+  const [voucherActionLoading, setVoucherActionLoading] = useState(false);
+  const [voucherActionError, setVoucherActionError] = useState(null);
 
+  const openVoucherPay = (user) => {
+    setVoucherAction({ user });
+    setVoucherActionError(null);
+  };
+
+  const closeVoucherPay = () => {
+    setVoucherAction(null);
+    setVoucherActionError(null);
+  };
   // მონაცემების ჩატვირთვა
   useEffect(() => {
     const loadAdminData = async () => {
@@ -182,7 +195,27 @@ const confirmUserAction = async () => {
     setUserActionLoading(false);
   }
 };
+  const confirmVoucherPay = async () => {
+    if (!voucherAction || !tokens.accessToken) return;
 
+    try {
+      setVoucherActionLoading(true);
+      setVoucherActionError(null);
+
+      await apiRequest(
+        `/admin/users/${voucherAction.user.id}/vouchers/pay`,
+        withAuth(tokens.accessToken, { method: 'POST' })
+      );
+
+      await reloadUsers(); // ✅ აქ ავტომატურად გაუნულდება pending
+      closeVoucherPay();
+    } catch (err) {
+      console.error(err);
+      setVoucherActionError(err.message || 'Failed to mark vouchers paid');
+    } finally {
+      setVoucherActionLoading(false);
+    }
+  };
 
   // აქ ვფილტრავთ აქტიური სტეტუსით (pending / approved / rejected)
   const filteredCampaigns = campaigns.filter((c) => c.status === requestFilter);
@@ -277,8 +310,12 @@ const confirmUserAction = async () => {
 
 
           {!loading && !error && activeTab === TABS.USERS && (
-            <UsersTable users={nonAdminUsers} onUserAction={openUserAction} />
-          )}
+<UsersTable
+  users={nonAdminUsers}
+  onUserAction={openUserAction}
+  onVoucherPay={openVoucherPay}
+/>
+)}
           {!loading && !error && activeTab === TABS.MAIL && (
   <AdminMailPanel />
 )}
@@ -294,7 +331,48 @@ const confirmUserAction = async () => {
       onDelete={handleDeleteCampaign}
     />
 
+      {/* Voucher pay modal */}
+      {voucherAction && (
+        <div className="admin-modal-backdrop" onClick={closeVoucherPay}>
+          <div className="admin-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Mark vouchers as paid</h3>
 
+            <p>
+              User: <strong>{voucherAction.user.username || voucherAction.user.email}</strong>
+            </p>
+            <p>
+              This will mark <strong>ALL pending vouchers</strong> as paid and the counter will go to 0.
+            </p>
+
+            {voucherActionError && (
+              <p className="status-error" style={{ marginTop: 8 }}>
+                {voucherActionError}
+              </p>
+            )}
+
+            <div className="modal-actions" style={{ marginTop: 16 }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={closeVoucherPay}
+                disabled={voucherActionLoading}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={confirmVoucherPay}
+                disabled={voucherActionLoading}
+                style={{ marginLeft: 8 }}
+              >
+                {voucherActionLoading ? 'Processing...' : 'Mark paid'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* User block/delete modal */}
       {userAction && (
         <div className="admin-modal-backdrop">
@@ -470,8 +548,8 @@ function RequestsTable({
   );
 }
 
-function UsersTable({ users, onUserAction }) {
-  if (!users.length) {
+function UsersTable({ users, onUserAction, onVoucherPay }) {
+if (!users.length) {
     return <p>No users yet.</p>;
   }
 
@@ -515,15 +593,24 @@ const countryMeta = getCountryMeta(u.country, baseCountryOptions);
               {u.rejectedCampaigns}
             </span>
 
-            <span>
-              {u?.unpaidVoucherCount > 0
-                ? `Voucher · ${u.unpaidVoucherCount} pending`
-                : u?.rewardStage === 'CERTIFICATE'
-                  ? 'Certificate'
-                  : u?.rewardStage === 'BADGE'
-                    ? 'Badge'
-                    : '—'}
-            </span>
+<span>
+  {u?.unpaidVoucherCount > 0 ? (
+    <button
+      type="button"
+      className="admin-voucher-link"
+      onClick={() => onVoucherPay && onVoucherPay(u)}
+      title="Mark vouchers as paid"
+    >
+      Voucher · {u.unpaidVoucherCount} pending
+    </button>
+  ) : u?.rewardStage === 'CERTIFICATE' ? (
+    'Certificate'
+  ) : u?.rewardStage === 'BADGE' ? (
+    'Badge'
+  ) : (
+    '—'
+  )}
+</span>
 
             <span className="admin-table-users-actions">
               {!u.isBlocked ? (
