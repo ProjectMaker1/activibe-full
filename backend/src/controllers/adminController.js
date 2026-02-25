@@ -78,32 +78,35 @@ export async function getUsersWithStats(req, res, next) {
     });
 
     const voucherCountMap = new Map(voucherAgg.map((v) => [v.userId, v._count._all]));
+const result = users.map((u) => {
+  const unpaidVoucherCount = voucherCountMap.get(u.id) || 0;
 
-    const result = users.map((u) => {
-      const unpaidVouchers = voucherCountMap.get(u.id) || 0;
+  let rewardLabel = '—';
+  if (unpaidVoucherCount > 0) {
+    rewardLabel = `Voucher · ${unpaidVoucherCount} pending`;
+  } else if (u.rewardStage === 'CERTIFICATE') {
+    rewardLabel = 'Certificate';
+  } else if (u.rewardStage === 'BADGE') {
+    rewardLabel = 'Badge';
+  }
 
-      let rewardLabel = '—';
-      if (unpaidVouchers > 0) {
-        rewardLabel = `${unpaidVouchers} pcs 50euro voucher`;
-      } else if (u.rewardStage === 'BADGE') {
-        rewardLabel = 'Own Badge';
-      } else if (u.rewardStage === 'CERTIFICATE') {
-        rewardLabel = 'Own Certificate';
-      }
+  return {
+    id: u.id,
+    username: u.username,
+    email: u.email,
+    country: u.country,
+    isBlocked: u.isBlocked,
+    createdAt: u.createdAt,
+    role: u.role,
 
-      return {
-        id: u.id,
-        username: u.username,
-        email: u.email,
-        country: u.country,
-        isBlocked: u.isBlocked,
-        createdAt: u.createdAt,
-        role: u.role,
+    // ✅ ეს ორი ველი სჭირდება ფრონტს ზუსტად ასე:
+    rewardStage: u.rewardStage,               // 'BADGE' | 'CERTIFICATE' | null
+    unpaidVoucherCount,                      // number
 
-        rewardLabel,
-        unpaidVouchers,
-      };
-    });
+    // (Optional) თუ გინდა, დატოვე UI-სთვის
+    rewardLabel,
+  };
+});
 
     res.json({ users: result });
   } catch (err) {

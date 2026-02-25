@@ -16,6 +16,7 @@ function Navbar({ theme, onToggleTheme, introActive }) {
   const navigate = useNavigate();
 
   const [showRewardModal, setShowRewardModal] = useState(false);
+   const [showCertificateZoom, setShowCertificateZoom] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [canInstall, setCanInstall] = useState(false);
   const [showIosInstall, setShowIosInstall] = useState(false);
@@ -60,6 +61,7 @@ function Navbar({ theme, onToggleTheme, introActive }) {
   const handleCloseRewardModal = async () => {
     await markRewardsSeen();
     setShowRewardModal(false);
+    setShowCertificateZoom(false);
   };
 
   const handleInstallClick = async () => {
@@ -218,14 +220,106 @@ function Navbar({ theme, onToggleTheme, introActive }) {
   {/* Reward modal */}
   {showRewardModal && isAuthenticated && (
     <div className="badge-modal-backdrop">
+        {/* Certificate fullscreen viewer (only when CERTIFICATE) */}
+  {showCertificateZoom && user?.rewardStage === 'CERTIFICATE' && (
+    <div
+      className="cert-zoom-backdrop"
+      onClick={() => setShowCertificateZoom(false)}
+      role="dialog"
+      aria-modal="true"
+    >
+      <button
+        type="button"
+        className="cert-zoom-close"
+        onClick={(e) => {
+          e.stopPropagation();
+          setShowCertificateZoom(false);
+        }}
+        aria-label="Close"
+        title="Close"
+      >
+        ×
+      </button>
+
+      <img
+        src="/Certificate.png"
+        alt="Certificate fullscreen"
+        className="cert-zoom-img"
+        onClick={(e) => e.stopPropagation()}
+      />
+
+      <style>{`
+        .certificate-zoom-btn{
+          border:0;
+          background:transparent;
+          padding:0;
+          cursor:pointer;
+          display:inline-flex;
+          align-items:center;
+          justify-content:center;
+        }
+
+        .cert-zoom-backdrop{
+          position: fixed;
+          inset: 0;
+          background: rgba(0,0,0,0.75);
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          z-index: 99999;
+          padding: 18px;
+        }
+
+        .cert-zoom-img{
+          max-width: min(980px, 100%);
+          max-height: 92vh;
+          width: auto;
+          height: auto;
+          border-radius: 14px;
+          box-shadow: 0 18px 55px rgba(0,0,0,0.45);
+          background: white;
+        }
+
+        .cert-zoom-close{
+          position: fixed;
+          top: 16px;
+          right: 16px;
+          width: 44px;
+          height: 44px;
+          border-radius: 999px;
+          border: 0;
+          cursor: pointer;
+          font-size: 28px;
+          line-height: 44px;
+          text-align: center;
+          background: rgba(255,255,255,0.92);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        }
+      `}</style>
+    </div>
+  )}
       <div className="badge-modal">
         <div className="badge-modal-icon-wrap">
           {user?.unpaidVoucherCount > 0 ? (
             <div style={{ fontWeight: 900, fontSize: 28, letterSpacing: 1 }}>€50</div>
+          ) : user?.rewardStage === 'CERTIFICATE' ? (
+            <button
+              type="button"
+              onClick={() => setShowCertificateZoom(true)}
+              className="certificate-zoom-btn"
+              aria-label="Open certificate fullscreen"
+              title="Open certificate fullscreen"
+            >
+              <img
+                src="/Certificate.png"
+                alt="Certificate"
+                className="badge-modal-icon"
+              />
+            </button>
           ) : (
             <img
-              src={user?.rewardStage === 'CERTIFICATE' ? '/Certificate.png' : '/badge.png'}
-              alt="Reward"
+              src="/badge.png"
+              alt="Badge"
               className="badge-modal-icon"
             />
           )}
