@@ -89,50 +89,57 @@ function Navbar({ theme, onToggleTheme, introActive }) {
     <header className="navbar">
       <div className="navbar-inner">
         {/* LEFT: logo + primary nav */}
-        <div className="navbar-left">
-          <Link to="/" className="navbar-logo" aria-label="ActiVibe home">
-<span className="logo-slot" style={{ opacity: introActive ? 0 : 1 }}>
-  <img
-    src="/actilogo-light.png"
-    alt="ActiVibe"
-    className="logo-img logo-img--light"
-    draggable="false"
-  />
-  <img
-    src="/actilogo-dark.png"
-    alt="ActiVibe"
-    className="logo-img logo-img--dark"
-    draggable="false"
-  />
-</span>
 
-          </Link>
+<div className="navbar-left">
+  <div className="navbar-ddi-slot" aria-label="Digital Democracy Initiative">
+    <img
+      src="/DDI.png"
+      alt="Digital Democracy Initiative"
+      className="navbar-ddi-logo"
+      draggable="false"
+    />
+  </div>
 
-          {/* 4 main links ALWAYS one line (scroll if needed) */}
-          <nav className="navbar-nav" aria-label="Primary navigation">
-            <NavLink to="/" className="nav-link">
-              Home
-            </NavLink>
-            <NavLink to="/campaigns" className="nav-link">
-              Campaigns
-            </NavLink>
-            <NavLink to="/chatbot" className="nav-link">
-              ChatBot
-            </NavLink>
-            <NavLink to="/upload" className="nav-link">
-              Upload
-            </NavLink>
-          </nav>
+  <Link to="/" className="navbar-logo" aria-label="ActiVibe home">
+    <span className="logo-slot" style={{ opacity: introActive ? 0 : 1 }}>
+      <img
+        src="/actilogo-light.png"
+        alt="ActiVibe"
+        className="logo-img logo-img--light"
+        draggable="false"
+      />
+      <img
+        src="/actilogo-dark.png"
+        alt="ActiVibe"
+        className="logo-img logo-img--dark"
+        draggable="false"
+      />
+    </span>
+  </Link>
 
-          {/* Admin can drop below on mobile (CSS handles it) */}
-          {isAdmin && (
-            <nav className="navbar-admin" aria-label="Admin navigation">
-              <NavLink to="/admin" className="nav-link nav-link-admin">
-                Admin panel
-              </NavLink>
-            </nav>
-          )}
-        </div>
+  <nav className="navbar-nav" aria-label="Primary navigation">
+    <NavLink to="/" className="nav-link">
+      Home
+    </NavLink>
+    <NavLink to="/campaigns" className="nav-link">
+      Campaigns
+    </NavLink>
+    <NavLink to="/chatbot" className="nav-link">
+      ChatBot
+    </NavLink>
+    <NavLink to="/upload" className="nav-link">
+      Upload
+    </NavLink>
+  </nav>
+
+  {isAdmin && (
+    <nav className="navbar-admin" aria-label="Admin navigation">
+      <NavLink to="/admin" className="nav-link nav-link-admin">
+        Admin panel
+      </NavLink>
+    </nav>
+  )}
+</div>
 
         {/* RIGHT: actions */}
         <div className="navbar-actions">

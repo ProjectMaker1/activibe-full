@@ -69,16 +69,51 @@ navigate("/chatbot?directAI=1");  };
           </div>
         </section>
 
-        <footer className="footer">
-          <div className="footer-inner">
-            <span>© {new Date().getFullYear()} ActiVibe</span>
-            <div className="footer-links">
-              <Link to="/about">About Us</Link>
-              <Link to="/contact">Contact</Link>
-              <Link to="/privacy">Privacy Policy</Link>
-            </div>
-          </div>
-        </footer>
+<footer className="footer">
+  <div className="footer-inner">
+    <span className="footer-copy">© {new Date().getFullYear()} ActiVibe</span>
+
+    <div className="footer-sponsor-strip" aria-label="Project partners">
+      <img
+        src="/CIVICUS.PNG"
+        alt="CIVICUS"
+        className="footer-sponsor-logo footer-sponsor-logo--civicus"
+        draggable="false"
+      />
+      <img
+        src="/metamorphosis.png"
+        alt="Metamorphosis"
+        className="footer-sponsor-logo footer-sponsor-logo--metamorphosis"
+        draggable="false"
+      />
+      <img
+        src="/CLI.PNG"
+        alt="Civic Literacy Initiative"
+        className="footer-sponsor-logo footer-sponsor-logo--cli"
+        draggable="false"
+      />
+      <img
+        src="/actilogo-light.png"
+        alt="ActiVibe"
+        className="footer-sponsor-logo footer-sponsor-logo--org footer-sponsor-logo--org-light"
+        draggable="false"
+      />
+      <img
+        src="/actilogo-dark.png"
+        alt="ActiVibe"
+        className="footer-sponsor-logo footer-sponsor-logo--org footer-sponsor-logo--org-dark"
+        draggable="false"
+      />
+    </div>
+
+    <div className="footer-links">
+      <Link to="/about">About Us</Link>
+      <Link to="/contact">Contact</Link>
+      <Link to="/privacy">Privacy Policy</Link>
+    </div>
+  </div>
+</footer>
+
       </div>
     </div>
   );
