@@ -112,6 +112,12 @@ navigate("/chatbot?directAI=1");  };
       <Link to="/privacy">Privacy Policy</Link>
     </div>
   </div>
+
+  <p className="footer-disclaimer">
+    This web page is produced as part of the Hackathon activity under the CIVICUS
+    Digital Democracy Initiative (DDI), implemented by Metamorphosis Foundation
+    in partnership with Civic Literacy Initiative.
+  </p>
 </footer>
 
       </div>
