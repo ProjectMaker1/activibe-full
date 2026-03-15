@@ -3656,23 +3656,22 @@ button {
   line-height: 0;
 }
 
-.navbar-ddi-logo{
-  display: block;
-  height: 20px;
-  width: auto;
-  max-width: none;
-  object-fit: contain;
-}
-@media (max-width: 900px){
-  .navbar-ddi-logo{
-    height: 18px;
-  }
+.navbar-ddi-slot{
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex: 0 0 auto;
+  line-height: 0;
+
+  /* DDI logo width controlled safely across screens */
+  width: clamp(96px, 11vw, 150px);
 }
 
-@media (max-width: 640px){
-  .navbar-ddi-logo{
-    height: 16px;
-  }
+.navbar-ddi-logo{
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
 }
 
 /* logo switch */
