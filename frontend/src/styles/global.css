@@ -3664,7 +3664,7 @@ button {
   line-height: 0;
 
   /* DDI logo width controlled safely across screens */
-  width: clamp(96px, 11vw, 150px);
+  width: clamp(96px, 13vw, 150px);
 }
 
 .navbar-ddi-logo{
