@@ -3660,7 +3660,7 @@ button {
 
 .navbar-ddi-logo{
   display: block;
-  height: 34px;
+  height: 44px;
   width: auto;
   max-width: none;
   object-fit: contain;
@@ -3668,19 +3668,19 @@ button {
 
 @media (max-width: 900px){
   .navbar-ddi-logo{
-    height: 30px;
+    height: 35px;
   }
 }
 
 @media (max-width: 640px){
   .navbar-ddi-logo{
-    height: 26px;
+    height: 30px;
   }
 }
 
 @media (max-width: 420px){
   .navbar-ddi-logo{
-    height: 23px;
+    height: 26px;
   }
 }
 
